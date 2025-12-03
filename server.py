@@ -7,11 +7,11 @@ app.config['SECRET_KEY'] = 'treason_secret_key_99'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # --- CONFIGURATION ---
-ROLES = ["Duke", "Assassin", "Captain", "Ambassador", "Contessa"]
+ROLES = ["Governor", "Mercenary", "Commander", "Diplomat", "Matriarch"]
 BLOCKERS = {
-    "foreign_aid": ["Duke"],
-    "assassinate": ["Contessa"],
-    "steal": ["Captain", "Ambassador"]
+    "foreign_funds": ["Governor"],
+    "eliminate": ["Matriarch"],
+    "extort": ["Commander", "Diplomat"]
 }
 
 # --- GAME STATE ---
@@ -115,7 +115,6 @@ def get_lobby_data():
         'host_seat': host_seat_idx
     }
 
-# --- HELPER: FORMAT NAME ---
 def fmt_name(seat_idx):
     if seat_idx is None or seats[seat_idx] is None: return "Unknown"
     return f"<span class='log-name'>{seats[seat_idx]['name']}</span>"
@@ -135,36 +134,33 @@ def on_action(data):
     
     actor = seats[actor_seat]
 
-    # Immediate Actions
     if action == 'income':
         actor['coins'] += 1
         broadcast_state(f"{fmt_name(actor_seat)} took Income.", sfx='coins')
         next_turn()
         return
 
-    if action == 'coup':
+    if action == 'execute':
         if actor['coins'] < 7: return
         actor['coins'] -= 7
-        broadcast_state(f"{fmt_name(actor_seat)} Coup -> {fmt_name(target_seat)}!", sfx='drama')
-        trigger_loss(target_seat, f"Coup by {fmt_name(actor_seat)}!", 'next_turn')
+        broadcast_state(f"{fmt_name(actor_seat)} Executed {fmt_name(target_seat)}!", sfx='drama')
+        trigger_loss(target_seat, f"Executed by {fmt_name(actor_seat)}!", 'next_turn')
         return
 
-    # Interactive Actions
     pending_action = {
         'type': action, 'actor_seat': actor_seat, 'target_seat': target_seat,
         'state': 'challenge_action', 'block_claim': None, 'blocker_seat': None,
         'allowed_by': set() 
     }
 
-    if action == 'foreign_aid':
+    if action == 'foreign_funds':
         pending_action['state'] = 'block_action' 
-        broadcast_state(f"{fmt_name(actor_seat)} wants Foreign Aid. Block?", interaction=True)
+        broadcast_state(f"{fmt_name(actor_seat)} seeks Foreign Funds. Intercept?", interaction=True)
     else:
-        msg = f"{fmt_name(actor_seat)} uses {action.upper()}"
+        msg = f"{fmt_name(actor_seat)} uses {action.upper().replace('_', ' ')}"
         if target_seat is not None: msg += f" -> {fmt_name(target_seat)}"
         broadcast_state(msg, interaction=True)
 
-# --- RESPONSES ---
 @socketio.on('response')
 def on_response(data):
     global pending_action
@@ -179,7 +175,6 @@ def on_response(data):
     if responder_seat == pending_action['actor_seat']:
         if pending_action['state'] in ['challenge_action', 'block_action']: return 
 
-    # 1. Challenge Phase
     if pending_action['state'] == 'challenge_action':
         if resp == 'challenge':
             resolve_challenge(challenger=responder_seat, accused=pending_action['actor_seat'], 
@@ -189,20 +184,19 @@ def on_response(data):
             opponents = [i for i in seats if seats[i] and seats[i]['alive'] and i != pending_action['actor_seat']]
             
             if len(pending_action['allowed_by']) >= len(opponents):
-                if pending_action['type'] in ['steal', 'assassinate']:
+                if pending_action['type'] in ['extort', 'eliminate']:
                     pending_action['state'] = 'block_action'
                     pending_action['allowed_by'] = set() 
-                    broadcast_state(f"Action claim allowed. Waiting for target to block...", interaction=True)
+                    broadcast_state(f"Action allowed. Waiting for victim to Intercept...", interaction=True)
                 else:
                     execute_action()
             else:
                 if pending_action: broadcast_state(None, interaction=True)
 
-    # 2. Block Phase
     elif pending_action['state'] == 'block_action':
         if resp == 'block':
             act = pending_action['type']
-            if act in ['steal', 'assassinate'] and responder_seat != pending_action['target_seat']: return
+            if act in ['extort', 'eliminate'] and responder_seat != pending_action['target_seat']: return
             
             role = data.get('role', BLOCKERS[act][0])
             
@@ -211,10 +205,10 @@ def on_response(data):
             pending_action['blocker_seat'] = responder_seat
             pending_action['allowed_by'] = set() 
             
-            broadcast_state(f"{fmt_name(responder_seat)} blocks with {role}. Challenge?", interaction=True)
+            broadcast_state(f"{fmt_name(responder_seat)} intercepts with {role}. Challenge?", interaction=True)
             
         elif resp == 'allow':
-             if pending_action['type'] == 'foreign_aid':
+             if pending_action['type'] == 'foreign_funds':
                  pending_action['allowed_by'].add(responder_seat)
                  opponents = [i for i in seats if seats[i] and seats[i]['alive'] and i != pending_action['actor_seat']]
                  if len(pending_action['allowed_by']) >= len(opponents):
@@ -225,7 +219,6 @@ def on_response(data):
                  if responder_seat == pending_action['target_seat']:
                      execute_action()
 
-    # 3. Challenge Block Phase
     elif pending_action['state'] == 'challenge_block':
         if resp == 'challenge':
             resolve_challenge(challenger=responder_seat, accused=pending_action['blocker_seat'], 
@@ -234,17 +227,11 @@ def on_response(data):
             pending_action['allowed_by'].add(responder_seat)
             opponents = [i for i in seats if seats[i] and seats[i]['alive'] and i != pending_action['blocker_seat']]
             if len(pending_action['allowed_by']) >= len(opponents):
-                broadcast_state(f"Block accepted. Action fails.")
+                broadcast_state(f"Intercept accepted. Action fails.")
                 next_turn()
             else:
                  if pending_action: broadcast_state(None, interaction=True)
 
-def check_auto_execute():
-    opponents = [i for i in seats if seats[i] and seats[i]['alive'] and i != pending_action['actor_seat']]
-    if len(pending_action['allowed_by']) >= len(opponents):
-        execute_action()
-
-# --- LOGIC ---
 def resolve_challenge(challenger, accused, claimed_role, is_block=False):
     accused_p = seats[accused]
     card_idx = next((i for i, c in enumerate(accused_p['hand']) if c['alive'] and c['role'] == claimed_role), -1)
@@ -269,20 +256,20 @@ def execute_action():
     
     msg = f"{fmt_name(pending_action['actor_seat'])} performs {act.upper()}!"
     
-    if act == 'exchange':
+    if act == 'reshuffle':
         initiate_exchange(pending_action['actor_seat'])
         return
 
-    if act == 'foreign_aid': actor['coins'] += 2
-    elif act == 'tax': actor['coins'] += 3
-    elif act == 'steal':
+    if act == 'foreign_funds': actor['coins'] += 2
+    elif act == 'embezzle': actor['coins'] += 3
+    elif act == 'extort':
         amt = min(2, target['coins'])
         target['coins'] -= amt
         actor['coins'] += amt
-        msg += f" Stole {amt} from {fmt_name(pending_action['target_seat'])}."
-    elif act == 'assassinate':
+        msg += f" Extorted {amt} from {fmt_name(pending_action['target_seat'])}."
+    elif act == 'eliminate':
         actor['coins'] -= 3
-        trigger_loss(pending_action['target_seat'], f"{fmt_name(pending_action['actor_seat'])} assassinates {fmt_name(pending_action['target_seat'])}!", 'next_turn')
+        trigger_loss(pending_action['target_seat'], f"{fmt_name(pending_action['actor_seat'])} Eliminates {fmt_name(pending_action['target_seat'])}!", 'next_turn')
         return
 
     broadcast_state(msg, sfx='coins' if 'coins' in msg else None)
@@ -292,15 +279,13 @@ def initiate_exchange(seat_idx):
     global exchange_state, deck
     p = seats[seat_idx]
     alive = [c['role'] for c in p['hand'] if c['alive']]
-    
-    # DRAW 2 CARDS (as per standard rules)
     drawn = []
     for _ in range(2):
         if deck: drawn.append(deck.pop())
         
     pool = alive + drawn
     exchange_state = {'actor_seat': seat_idx, 'pool': pool, 'count_to_keep': len(alive)}
-    broadcast_state(f"{fmt_name(seat_idx)} is exchanging cards...", exchange_active=True)
+    broadcast_state(f"{fmt_name(seat_idx)} is reshuffling loyalties...", exchange_active=True)
 
 @socketio.on('finish_exchange')
 def on_finish_exchange(data):
@@ -310,17 +295,14 @@ def on_finish_exchange(data):
     if seat_idx != exchange_state['actor_seat']: return
     
     kept = data['kept_roles']
-    
     if len(kept) != exchange_state['count_to_keep']: return
 
     pool = list(exchange_state['pool'])
-    
     for r in kept:
         if r in pool: pool.remove(r)
         else: return
     
     deck.extend(pool); random.shuffle(deck)
-    
     p = seats[seat_idx]
     idx = 0
     for c in p['hand']:
@@ -329,7 +311,7 @@ def on_finish_exchange(data):
             idx += 1
             
     exchange_state = None
-    broadcast_state("Exchange complete.", sfx='coins')
+    broadcast_state("Reshuffle complete.", sfx='coins')
     next_turn()
 
 def trigger_loss(seat_idx, log_msg, next_step):
@@ -337,16 +319,16 @@ def trigger_loss(seat_idx, log_msg, next_step):
     p = seats[seat_idx]
     alive = [c for c in p['hand'] if c['alive']]
     sfx = 'drama'
-    if 'assassin' in log_msg.lower(): sfx = 'heartbeat'
+    if 'eliminate' in log_msg.lower(): sfx = 'heartbeat'
     broadcast_state(log_msg, sfx=sfx)
     
     if not alive: finish_discard(seat_idx, next_step); return
     if len(alive) > 1:
         discard_state = {'victim_seat': seat_idx, 'reason': log_msg, 'next_step': next_step}
-        broadcast_state(f"Waiting for {p['name']} to discard...", discard_prompt=True, sfx=sfx)
+        broadcast_state(f"Waiting for {p['name']} to lose loyalty...", discard_prompt=True, sfx=sfx)
     else:
         alive[0]['alive'] = False
-        broadcast_state(f"{fmt_name(seat_idx)} lost last influence: {alive[0]['role']}", sfx='stab')
+        broadcast_state(f"{fmt_name(seat_idx)} lost loyalty: {alive[0]['role']}", sfx='stab')
         finish_discard(seat_idx, next_step)
 
 @socketio.on('discard')
@@ -360,7 +342,7 @@ def on_discard(data):
     idx = data['index']
     if p['hand'][idx]['alive']:
         p['hand'][idx]['alive'] = False
-        broadcast_state(f"{fmt_name(seat_idx)} discarded {p['hand'][idx]['role']}.", sfx='stab')
+        broadcast_state(f"{fmt_name(seat_idx)} lost loyalty: {p['hand'][idx]['role']}.", sfx='stab')
         step = discard_state['next_step']
         discard_state = None
         finish_discard(seat_idx, step)
@@ -370,8 +352,6 @@ def finish_discard(seat_idx, next_step):
     p = seats[seat_idx]
     if not any(c['alive'] for c in p['hand']):
         p['alive'] = False
-        
-        # CHECK WINNER
         alive_players = [seats[i]['name'] for i in seats if seats[i] and seats[i]['alive']]
         if len(alive_players) == 1: 
             socketio.emit('game_over', {'winner': alive_players[0]})
@@ -381,7 +361,6 @@ def finish_discard(seat_idx, next_step):
     if next_step == 'next_turn': next_turn()
     elif next_step == 'execute': execute_action()
     elif next_step == 'abort': next_turn()
-    elif next_step == 'assassinate_target': trigger_loss(pending_action['target_seat'], "Assassination continues...", 'next_turn')
 
 def next_turn():
     global turn_index, pending_action, discard_state, exchange_state
@@ -401,13 +380,17 @@ def get_seat_from_sid(sid):
     return None
 
 def get_role_for_action(act):
-    return {'tax':'Duke','assassinate':'Assassin','steal':'Captain','exchange':'Ambassador'}.get(act)
+    return {
+        'embezzle': 'Governor',
+        'eliminate': 'Mercenary',
+        'extort': 'Commander',
+        'reshuffle': 'Diplomat'
+    }.get(act)
 
 def broadcast_state(log_msg, interaction=False, discard_prompt=False, exchange_active=False, sfx=None):
     for sid in [seats[i]['sid'] for i in seats if seats[i]]:
         my_seat = get_seat_from_sid(sid)
         me = seats[my_seat]
-        
         table_data = {}
         for i in seats:
             if seats[i]:
@@ -415,22 +398,18 @@ def broadcast_state(log_msg, interaction=False, discard_prompt=False, exchange_a
                 table_data[i] = {'name': seats[i]['name'], 'coins': seats[i]['coins'], 'hand': hand, 'alive': seats[i]['alive']}
 
         show_interact = False
-        
         if interaction and pending_action and me['alive']:
-            if my_seat in pending_action['allowed_by']:
-                show_interact = False
+            if my_seat in pending_action['allowed_by']: show_interact = False
             else:
                 if pending_action['actor_seat'] == my_seat:
                     if pending_action['state'] == 'challenge_block': show_interact = True
                 else:
                     if pending_action['state'] == 'challenge_action': show_interact = True
                     elif pending_action['state'] == 'block_action':
-                        if pending_action['type'] == 'foreign_aid': show_interact = True
+                        if pending_action['type'] == 'foreign_funds': show_interact = True
                         elif pending_action['target_seat'] == my_seat: show_interact = True
-                    
                     elif pending_action['state'] == 'challenge_block':
-                        if my_seat != pending_action['blocker_seat']:
-                            show_interact = True
+                        if my_seat != pending_action['blocker_seat']: show_interact = True
         
         show_discard = (discard_prompt and discard_state and my_seat == discard_state['victim_seat'])
         show_exchange = (exchange_active and exchange_state and my_seat == exchange_state['actor_seat'])
@@ -438,11 +417,7 @@ def broadcast_state(log_msg, interaction=False, discard_prompt=False, exchange_a
         
         arrow_data = None
         if pending_action and pending_action['target_seat'] is not None:
-            arrow_data = {
-                'from': pending_action['actor_seat'], 
-                'to': pending_action['target_seat'], 
-                'label': pending_action['type'].upper()
-            }
+            arrow_data = {'from': pending_action['actor_seat'], 'to': pending_action['target_seat'], 'label': pending_action['type'].upper()}
 
         emit('game_update', {
             'my_seat': my_seat, 'turn_seat': turn_index, 'table': table_data, 'my_hand': me['hand'],
