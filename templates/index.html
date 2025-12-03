@@ -1,160 +1,740 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Treason</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap"
+        rel="stylesheet">
     <style>
-        :root { --wood-dark: #1a0f05; --wood-light: #3e2b19; --gold: #d4af37; --red: #8a1c1c; --green-felt: #2d5a27; --parchment: #f4e4bc; }
-        body { background-color: #050302; background-image: radial-gradient(circle at 50% 50%, #2b1d0e 0%, #000000 100%); color: var(--parchment); font-family: 'Lato', sans-serif; margin: 0; height: 100vh; overflow: hidden; user-select: none; }
+        :root {
+            --wood-dark: #1a0f05;
+            --wood-light: #3e2b19;
+            --gold: #d4af37;
+            --red: #8a1c1c;
+            --green-felt: #2d5a27;
+            --parchment: #f4e4bc;
+        }
+
+        body {
+            background-color: #050302;
+            background-image: radial-gradient(circle at 50% 50%, #2b1d0e 0%, #000000 100%);
+            color: var(--parchment);
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
 
         /* TOP LEFT BUTTONS */
-        .top-btn-container { position: fixed; top: 20px; left: 20px; z-index: 200; display: flex; gap: 10px; }
-        .icon-btn { background: var(--wood-light); border: 2px solid var(--gold); color: var(--gold); width: 40px; height: 40px; border-radius: 50%; font-family: 'Cinzel'; font-weight: bold; font-size: 1.2rem; cursor: pointer; box-shadow: 0 0 10px #000; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; padding: 0; }
-        .icon-btn:hover { transform: scale(1.1); background: var(--gold); color: #000; }
+        .top-btn-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: var(--wood-light);
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-family: 'Cinzel';
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 0 10px #000;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+            background: var(--gold);
+            color: #000;
+        }
 
         /* LOBBY INFO */
-        #lobby-info { position: fixed; top: 70px; left: 20px; z-index: 110; background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 15px; border-radius: 8px; min-width: 200px; }
-        #lobby-info h3 { margin: 0 0 10px 0; color: var(--gold); font-family: 'Cinzel'; border-bottom: 1px solid #444; }
-        .lobby-player-item { padding: 5px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
-        .is-host { color: var(--gold); }
-        .can-transfer { cursor: pointer; }
+        #lobby-info {
+            position: fixed;
+            top: 70px;
+            left: 20px;
+            z-index: 110;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--gold);
+            padding: 15px;
+            border-radius: 8px;
+            min-width: 200px;
+        }
+
+        #lobby-info h3 {
+            margin: 0 0 10px 0;
+            color: var(--gold);
+            font-family: 'Cinzel';
+            border-bottom: 1px solid #444;
+        }
+
+        .lobby-player-item {
+            padding: 5px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .is-host {
+            color: var(--gold);
+        }
+
+        .can-transfer {
+            cursor: pointer;
+        }
 
         /* CHEATSHEET POPUP */
-        #cheatsheet-content { display: none; position: absolute; top: 50px; left: 0; background: rgba(20, 10, 5, 0.95); border: 2px solid var(--gold); padding: 15px; border-radius: 8px; color: #ddd; font-size: 0.85rem; width: 260px; box-shadow: 0 5px 20px #000; }
-        .cs-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 4px 0; }
-        .cs-role { color: var(--gold); font-weight: bold; font-family: 'Cinzel'; }
-        .cs-desc { font-size: 0.75rem; color: #999; margin-bottom: 4px; font-style: italic; }
+        #cheatsheet-content {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 0;
+            background: rgba(20, 10, 5, 0.95);
+            border: 2px solid var(--gold);
+            padding: 15px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 0.85rem;
+            width: 260px;
+            box-shadow: 0 5px 20px #000;
+        }
+
+        .cs-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #444;
+            padding: 4px 0;
+        }
+
+        .cs-role {
+            color: var(--gold);
+            font-weight: bold;
+            font-family: 'Cinzel';
+        }
+
+        .cs-desc {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 4px;
+            font-style: italic;
+        }
 
         /* RULES MODAL */
-        .rules-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 600px; height: 60vh; background: #1a0f05; border: 2px solid var(--gold); z-index: 300; box-shadow: 0 0 50px #000; flex-direction: column; border-radius: 8px; }
-        .rules-header { background: var(--wood-light); padding: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); }
-        .rules-header h2 { margin: 0; color: var(--gold); font-family: 'Cinzel'; }
-        .close-btn { cursor: pointer; color: var(--red); font-weight: bold; font-size: 1.5rem; background: none; border: none; }
-        .rules-tabs { display: flex; background: #111; border-bottom: 1px solid #333; }
-        .tab-btn { flex: 1; background: none; border: none; color: #888; padding: 10px; cursor: pointer; font-family: 'Cinzel'; border-bottom: 2px solid transparent; transition: all 0.2s; }
-        .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); background: rgba(212, 175, 55, 0.1); }
-        .rules-body { flex: 1; overflow-y: auto; padding: 20px; font-size: 0.9rem; line-height: 1.6; color: #ddd; }
-        .rules-section { display: none; }
-        .rules-section.active { display: block; }
-        .rules-section h3 { color: var(--gold); border-bottom: 1px solid #444; margin-top: 0; }
-        .rules-section strong { color: var(--parchment); }
+        .rules-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            height: 60vh;
+            background: #1a0f05;
+            border: 2px solid var(--gold);
+            z-index: 300;
+            box-shadow: 0 0 50px #000;
+            flex-direction: column;
+            border-radius: 8px;
+        }
+
+        .rules-header {
+            background: var(--wood-light);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        .rules-header h2 {
+            margin: 0;
+            color: var(--gold);
+            font-family: 'Cinzel';
+        }
+
+        .close-btn {
+            cursor: pointer;
+            color: var(--red);
+            font-weight: bold;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+        }
+
+        .rules-tabs {
+            display: flex;
+            background: #111;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #888;
+            padding: 10px;
+            cursor: pointer;
+            font-family: 'Cinzel';
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .rules-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #ddd;
+        }
+
+        .rules-section {
+            display: none;
+        }
+
+        .rules-section.active {
+            display: block;
+        }
+
+        .rules-section h3 {
+            color: var(--gold);
+            border-bottom: 1px solid #444;
+            margin-top: 0;
+        }
+
+        .rules-section strong {
+            color: var(--parchment);
+        }
 
         /* GAME ASSETS - RESIZED CARDS */
-        .card-name-overlay { 
-            position: absolute; bottom: 5px; left: 0; width: 100%; text-align: center; 
-            color: rgba(255, 244, 188, 0.9); font-family: 'Cinzel', serif; font-size: 0.75rem; pointer-events: none; 
-            text-shadow: 2px 2px 3px black; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); 
-            padding-bottom: 4px; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; 
+        .card-name-overlay {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 244, 188, 0.9);
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            pointer-events: none;
+            text-shadow: 2px 2px 3px black;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+            padding-bottom: 4px;
+            border-bottom-left-radius: 6px;
+            border-bottom-right-radius: 6px;
         }
-        
-        .card-lg { 
-            width: 90px;             /* REDUCED SIZE */
-            height: 135px;           /* REDUCED SIZE */
-            background-color: #1a0f05; 
-            background-size: cover; 
-            background-position: center center; 
+
+        .card-lg {
+            width: 90px;
+            /* REDUCED SIZE */
+            height: 135px;
+            /* REDUCED SIZE */
+            background-color: #1a0f05;
+            background-size: cover;
+            background-position: center center;
             background-repeat: no-repeat;
-            border-radius: 6px; 
-            border: 2px solid #444; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.6); 
-            transition: transform 0.2s, border-color 0.2s; 
-            position: relative; 
+            border-radius: 6px;
+            border: 2px solid #444;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6);
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
         }
-        .card-lg:hover { transform: translateY(-15px) scale(1.05); border-color: var(--gold); z-index: 10; }
-        
-        .card-back { background: repeating-linear-gradient(45deg, #3e2b19, #3e2b19 10px, #2b1d0e 10px, #2b1d0e 20px); border: 1px solid #5e4020; }
-        
-        .card-Governor { background-image: url('/static/governor.png'); }
-        .card-Mercenary { background-image: url('/static/mercenary.png'); }
-        .card-Diplomat { background-image: url('/static/diplomat.png'); }
-        .card-Commander { background-image: url('/static/commander.png'); }
-        .card-Matriarch { background-image: url('/static/matriarch.png'); }
-        
-        .dead { filter: grayscale(100%) brightness(40%); border-color: var(--red) !important; }
-        .card-select { cursor: pointer; transition: transform 0.2s; border: 4px solid transparent; }
-        .card-select:hover { transform: scale(1.05); border-color: var(--red); }
+
+        .card-lg:hover {
+            transform: translateY(-15px) scale(1.05);
+            border-color: var(--gold);
+            z-index: 10;
+        }
+
+        .card-back {
+            background: repeating-linear-gradient(45deg, #3e2b19, #3e2b19 10px, #2b1d0e 10px, #2b1d0e 20px);
+            border: 1px solid #5e4020;
+        }
+
+        .card-Governor {
+            background-image: url('/static/governor.png');
+        }
+
+        .card-Mercenary {
+            background-image: url('/static/mercenary.png');
+        }
+
+        .card-Diplomat {
+            background-image: url('/static/diplomat.png');
+        }
+
+        .card-Commander {
+            background-image: url('/static/commander.png');
+        }
+
+        .card-Matriarch {
+            background-image: url('/static/matriarch.png');
+        }
+
+        .dead {
+            filter: grayscale(100%) brightness(40%);
+            border-color: var(--red) !important;
+        }
+
+        .card-select {
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 4px solid transparent;
+        }
+
+        .card-select:hover {
+            transform: scale(1.05);
+            border-color: var(--red);
+        }
 
         /* LAYOUT */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .modal-title { font-family: 'Cinzel', serif; font-size: 3rem; color: var(--red); margin-bottom: 20px; text-shadow: 0 0 10px var(--red); }
-        .modal-subtitle { font-size: 1.2rem; color: #aaa; margin-bottom: 40px; }
-        .modal-cards { display: flex; gap: 30px; }
-        
-        #lobby-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .lobby-table { width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, #5e4020 0%, #2b1d0e 100%); border: 8px solid var(--gold); position: relative; margin: 40px; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
-        .lobby-seat { width: 60px; height: 60px; background: #222; border-radius: 50%; position: absolute; cursor: pointer; border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; transform: translate(-50%, -50%); transition: all 0.3s; }
-        .lobby-seat:hover:not(.taken) { transform: translate(-50%, -50%) scale(1.2); background: var(--gold); color: #000; }
-        .lobby-seat.taken { background: var(--red); border-color: #500; cursor: default; }
-        
-        #game-board { display: none; width: 100%; height: 100vh; position: relative; }
-        #center-table { width: 45vw; height: 45vw; max-width: 600px; max-height: 600px; background-color: var(--wood-light); background-image: url("https://www.transparenttextures.com/patterns/wood-pattern.png"); border-radius: 50%; border: 12px solid #261608; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 0 80px #000, 0 20px 50px rgba(0,0,0,0.8); z-index: 1; }
-        #center-table::after { content: ''; position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; background: var(--green-felt); border-radius: 50%; box-shadow: inset 0 0 40px rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.1); }
-        
-        #game-log-container { position: fixed; top: 20px; right: 20px; width: 250px; height: 300px; background: rgba(20, 10, 5, 0.85); border: 2px solid var(--gold); border-radius: 8px; display: flex; flex-direction: column; z-index: 20; box-shadow: 0 5px 20px #000; }
-        #log-header { background: var(--wood-light); color: var(--gold); padding: 5px; font-family: 'Cinzel'; font-weight: bold; text-align: center; border-bottom: 1px solid var(--gold); }
-        #game-log { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; color: #ddd; scrollbar-width: thin; }
-        .log-msg { margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 4px; line-height: 1.4; }
-        .log-name { color: var(--gold); font-weight: bold; text-shadow: 0 0 3px rgba(212, 175, 55, 0.3); }
-        
-        #arrow-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-        .arrow-line { stroke: var(--red); stroke-width: 6; stroke-dasharray: 15; animation: dash 1s linear infinite; filter: drop-shadow(0 0 5px black); opacity: 0.8; }
-        .arrow-head { fill: var(--red); filter: drop-shadow(0 0 5px black); }
-        .arrow-label { fill: var(--gold); font-family: 'Cinzel'; font-weight: bold; font-size: 24px; text-shadow: 2px 2px 2px black; }
-        .arrow-bg { fill: rgba(0,0,0,0.8); rx: 5; }
-        @keyframes dash { to { stroke-dashoffset: -30; } }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
 
-        #seats-container { position: absolute; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
-        .seat-pos { position: absolute; width: 140px; text-align: center; pointer-events: auto; transition: all 0.5s ease-out; }
-        .seat-info { background: rgba(20, 10, 5, 0.9); border: 2px solid var(--wood-light); padding: 8px; border-radius: 8px; margin-bottom: 5px; box-shadow: 0 4px 10px #000; position: relative; transition: transform 0.2s; }
-        .active-turn .seat-info { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); transform: scale(1.05); }
-        .target-mode .seat-info { cursor: pointer; animation: targetPulse 1s infinite; border-color: var(--red); }
-        @keyframes targetPulse { 0% { box-shadow: 0 0 0 0 rgba(138, 28, 28, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(138, 28, 28, 0); } 100% { box-shadow: 0 0 0 0 rgba(138, 28, 28, 0); } }
-        .card-sm { width: 40px; height: 58px; background: #111; border-radius: 4px; box-shadow: 1px 1px 3px rgba(0,0,0,0.5); background-size: cover; border: 1px solid #333; display: inline-block; margin: 0 2px; }
-        
+        .modal-title {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            color: var(--red);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px var(--red);
+        }
+
+        .modal-subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+
+        .modal-cards {
+            display: flex;
+            gap: 30px;
+        }
+
+        #lobby-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lobby-table {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #5e4020 0%, #2b1d0e 100%);
+            border: 8px solid var(--gold);
+            position: relative;
+            margin: 40px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .lobby-seat {
+            width: 60px;
+            height: 60px;
+            background: #222;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            border: 2px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #fff;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s;
+        }
+
+        .lobby-seat:hover:not(.taken) {
+            transform: translate(-50%, -50%) scale(1.2);
+            background: var(--gold);
+            color: #000;
+        }
+
+        .lobby-seat.taken {
+            background: var(--red);
+            border-color: #500;
+            cursor: default;
+        }
+
+        #game-board {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        #center-table {
+            width: 45vw;
+            height: 45vw;
+            max-width: 600px;
+            max-height: 600px;
+            background-color: var(--wood-light);
+            background-image: url("https://www.transparenttextures.com/patterns/wood-pattern.png");
+            border-radius: 50%;
+            border: 12px solid #261608;
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: inset 0 0 80px #000, 0 20px 50px rgba(0, 0, 0, 0.8);
+            z-index: 1;
+        }
+
+        #center-table::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background: var(--green-felt);
+            border-radius: 50%;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #game-log-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            height: 300px;
+            background: rgba(20, 10, 5, 0.85);
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            box-shadow: 0 5px 20px #000;
+        }
+
+        #log-header {
+            background: var(--wood-light);
+            color: var(--gold);
+            padding: 5px;
+            font-family: 'Cinzel';
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid var(--gold);
+        }
+
+        #game-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #ddd;
+            scrollbar-width: thin;
+        }
+
+        .log-msg {
+            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .log-name {
+            color: var(--gold);
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(212, 175, 55, 0.3);
+        }
+
+        #arrow-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .arrow-line {
+            stroke: var(--red);
+            stroke-width: 6;
+            stroke-dasharray: 15;
+            animation: dash 1s linear infinite;
+            filter: drop-shadow(0 0 5px black);
+            opacity: 0.8;
+        }
+
+        .arrow-head {
+            fill: var(--red);
+            filter: drop-shadow(0 0 5px black);
+        }
+
+        .arrow-label {
+            fill: var(--gold);
+            font-family: 'Cinzel';
+            font-weight: bold;
+            font-size: 24px;
+            text-shadow: 2px 2px 2px black;
+        }
+
+        .arrow-bg {
+            fill: rgba(0, 0, 0, 0.8);
+            rx: 5;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -30;
+            }
+        }
+
+        #seats-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .seat-pos {
+            position: absolute;
+            width: 140px;
+            text-align: center;
+            pointer-events: auto;
+            transition: all 0.5s ease-out;
+        }
+
+        .seat-info {
+            background: rgba(20, 10, 5, 0.9);
+            border: 2px solid var(--wood-light);
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            box-shadow: 0 4px 10px #000;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .active-turn .seat-info {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px var(--gold);
+            transform: scale(1.05);
+        }
+
+        .target-mode .seat-info {
+            cursor: pointer;
+            animation: targetPulse 1s infinite;
+            border-color: var(--red);
+        }
+
+        @keyframes targetPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(138, 28, 28, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(138, 28, 28, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(138, 28, 28, 0);
+            }
+        }
+
+        .card-sm {
+            width: 40px;
+            height: 58px;
+            background: #111;
+            border-radius: 4px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            background-size: cover;
+            border: 1px solid #333;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
         /* CONTROLS AREA COMPACTED */
-        #controls-area { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: linear-gradient(to top, #1a0f05 85%, transparent 100%); 
-            padding: 5px 0 10px 0; /* REDUCED PADDING */
-            display: flex; flex-direction: column; align-items: center; 
-            z-index: 50; border-top: 1px solid #333; 
+        #controls-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #1a0f05 85%, transparent 100%);
+            padding: 5px 0 10px 0;
+            /* REDUCED PADDING */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 50;
+            border-top: 1px solid #333;
         }
-        #my-hand-area { display: flex; gap: 15px; margin-bottom: 5px; margin-top: 5px; }
-        #my-coins-display { 
-            font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.2rem; 
-            margin-bottom: 5px; text-shadow: 0 2px 4px #000; border: 2px solid #5e4020; 
-            padding: 3px 15px; background: rgba(0,0,0,0.6); border-radius: 20px; 
+
+        #my-hand-area {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 5px;
+            margin-top: 5px;
         }
-        #status-msg { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.1rem; margin-bottom: 3px; min-height: 20px; }
-        
-        .action-bar { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 800px; margin-bottom: 5px; }
-        button { 
-            background: linear-gradient(to bottom, #d4af37 0%, #a88520 100%); 
-            border: 2px solid #5e4020; border-radius: 4px; color: #1a0f05; 
-            font-family: 'Cinzel', serif; font-weight: bold; padding: 6px 12px; font-size: 0.9rem;
-            cursor: pointer; transition: all 0.2s; 
+
+        #my-coins-display {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px #000;
+            border: 2px solid #5e4020;
+            padding: 3px 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
         }
-        button:disabled { background: #333; color: #777; border-color: #444; cursor: not-allowed; filter: grayscale(100%); }
-        button.btn-red { background: linear-gradient(to bottom, #8a1c1c 0%, #520e0e 100%); color: white; border-color: #2b0505; }
-        button.active-action { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: scale(1.1); filter: brightness(1.2); z-index: 10; }
-        
-        .ex-zones-container { display: flex; gap: 20px; justify-content: center; margin-bottom: 15px; }
-        .ex-zone { border: 2px solid var(--wood-light); background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; min-width: 150px; display:flex; flex-direction:column; align-items:center; }
-        .ex-zone h4 { margin: 0 0 10px 0; color: #aaa; font-family: 'Cinzel'; border-bottom: 1px solid #444; font-size: 0.9rem; width:100%; text-align:center; }
-        .ex-cards-flex { display: flex; gap: 8px; justify-content: center; }
-        
-        .overlay-ui { display: none; }
+
+        #status-msg {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 1.1rem;
+            margin-bottom: 3px;
+            min-height: 20px;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+            margin-bottom: 5px;
+        }
+
+        button {
+            background: linear-gradient(to bottom, #d4af37 0%, #a88520 100%);
+            border: 2px solid #5e4020;
+            border-radius: 4px;
+            color: #1a0f05;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:disabled {
+            background: #333;
+            color: #777;
+            border-color: #444;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        button.btn-red {
+            background: linear-gradient(to bottom, #8a1c1c 0%, #520e0e 100%);
+            color: white;
+            border-color: #2b0505;
+        }
+
+        button.active-action {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px var(--gold);
+            transform: scale(1.1);
+            filter: brightness(1.2);
+            z-index: 10;
+        }
+
+        .ex-zones-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .ex-zone {
+            border: 2px solid var(--wood-light);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            min-width: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ex-zone h4 {
+            margin: 0 0 10px 0;
+            color: #aaa;
+            font-family: 'Cinzel';
+            border-bottom: 1px solid #444;
+            font-size: 0.9rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .ex-cards-flex {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .overlay-ui {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
-    <audio id="sfx-coins" src="/static/coins.mp3"></audio> <audio id="sfx-drama" src="/static/drama.mp3"></audio> <audio id="sfx-stab" src="/static/stab.mp3"></audio> <audio id="sfx-heartbeat" src="/static/heartbeat.mp3" loop></audio>
+    <audio id="sfx-coins" src="/static/coins.mp3"></audio> <audio id="sfx-drama" src="/static/drama.mp3"></audio> <audio
+        id="sfx-stab" src="/static/stab.mp3"></audio> <audio id="sfx-heartbeat" src="/static/heartbeat.mp3"
+        loop></audio>
 
     <!-- TOP LEFT CONTROLS -->
+    <!-- TOP CONTROLS -->
     <div class="top-btn-container">
         <button class="icon-btn" onclick="toggleCheatsheet()">?</button>
         <button class="icon-btn" onclick="toggleRules()">i</button>
+    </div>
+
+    <div style="position: fixed; top: 20px; right: 280px; z-index: 200;">
+        <a href="https://ko-fi.com/bane007" target="_blank" style="text-decoration: none;">
+            <button class="icon-btn"
+                style="width: auto; padding: 0 15px; font-size: 0.9rem; background: var(--red); color: var(--parchment); border-color: #520e0e;">
+                ♥ Support
+            </button>
+        </a>
     </div>
 
     <!-- CHEATSHEET POPUP -->
@@ -186,26 +766,31 @@
             <!-- TAB 1: Overview -->
             <div id="tab-overview" class="rules-section active">
                 <h3>The Goal</h3>
-                <p>Be the last player with <strong>Loyalty</strong>. You start with 2 face-down cards (Loyalties) and 2 coins.</p>
+                <p>Be the last player with <strong>Loyalty</strong>. You start with 2 face-down cards (Loyalties) and 2
+                    coins.</p>
                 <h3>How to Play</h3>
                 <ul>
                     <li>On your turn, pick <strong>ONE</strong> action.</li>
                     <li>You can lie about what Loyalties you have.</li>
-                    <li>If you lose Loyalty (from Execution, Elimination, or failed bluff), you flip one card face up.</li>
+                    <li>If you lose Loyalty (from Execution, Elimination, or failed bluff), you flip one card face up.
+                    </li>
                     <li>If both cards are face up, you are out.</li>
                 </ul>
             </div>
-            
+
             <!-- TAB 2: Roles -->
             <div id="tab-roles" class="rules-section">
                 <h3>Governor</h3>
                 <p><strong>Action:</strong> Embezzle (+3 coins).<br><strong>Intercepts:</strong> Foreign Funds.</p>
                 <h3>Mercenary</h3>
-                <p><strong>Action:</strong> Eliminate (Pay 3 coins to kill a Loyalty).<br><strong>Intercepted by:</strong> Matriarch.</p>
+                <p><strong>Action:</strong> Eliminate (Pay 3 coins to kill a Loyalty).<br><strong>Intercepted
+                        by:</strong> Matriarch.</p>
                 <h3>Commander</h3>
-                <p><strong>Action:</strong> Extort (+2 coins from a player).<br><strong>Intercepts:</strong> Extortion.</p>
+                <p><strong>Action:</strong> Extort (+2 coins from a player).<br><strong>Intercepts:</strong> Extortion.
+                </p>
                 <h3>Diplomat</h3>
-                <p><strong>Action:</strong> Reshuffle (Draw 2 cards, keep 2, return rest).<br><strong>Intercepts:</strong> Extortion.</p>
+                <p><strong>Action:</strong> Reshuffle (Draw 2 cards, keep 2, return
+                    rest).<br><strong>Intercepts:</strong> Extortion.</p>
                 <h3>Matriarch</h3>
                 <p><strong>Action:</strong> None.<br><strong>Intercepts:</strong> Elimination.</p>
             </div>
@@ -231,7 +816,10 @@
     <!-- LOBBY -->
     <div id="lobby-screen">
         <h1 style="color: var(--gold); font-family: 'Cinzel'; font-size: 3rem;">Treason</h1>
-        <div id="lobby-info"><h3>Players in Lobby</h3><div id="lobby-list-content"></div></div>
+        <div id="lobby-info">
+            <h3>Players in Lobby</h3>
+            <div id="lobby-list-content"></div>
+        </div>
         <input id="username" placeholder="Enter Your Name" style="padding: 10px; text-align: center;">
         <div style="color:#888; margin-top:5px; font-size:0.8rem">Enter Name FIRST, then select a Seat</div>
         <div class="lobby-table" id="lobby-slots"></div>
@@ -252,21 +840,30 @@
 
     <!-- GAME BOARD -->
     <div id="game-board">
-        <div id="game-log-container"><div id="log-header">Chronicles</div><div id="game-log"></div></div>
+        <div id="game-log-container">
+            <div id="log-header">Chronicles</div>
+            <div id="game-log"></div>
+        </div>
         <svg id="arrow-layer">
-            <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="arrow-head"/></marker></defs>
-            <line id="action-arrow" class="arrow-line" x1="0" y1="0" x2="0" y2="0" style="display:none" marker-end="url(#arrowhead)" />
-            <rect id="arrow-bg" class="arrow-bg" x="0" y="0" width="0" height="0" style="display:none"/>
-            <text id="arrow-text" class="arrow-label" x="0" y="0" text-anchor="middle" alignment-baseline="middle" style="display:none"></text>
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" class="arrow-head" />
+                </marker>
+            </defs>
+            <line id="action-arrow" class="arrow-line" x1="0" y1="0" x2="0" y2="0" style="display:none"
+                marker-end="url(#arrowhead)" />
+            <rect id="arrow-bg" class="arrow-bg" x="0" y="0" width="0" height="0" style="display:none" />
+            <text id="arrow-text" class="arrow-label" x="0" y="0" text-anchor="middle" alignment-baseline="middle"
+                style="display:none"></text>
         </svg>
-        
+
         <div id="center-table"></div>
         <div id="seats-container"></div>
-        
+
         <div id="controls-area">
             <div id="status-msg"></div>
             <div id="my-coins-display">Coins: 0</div>
-            
+
             <div id="main-actions" class="action-bar" style="display:none;">
                 <button onclick="doAction('income', this)">Income</button>
                 <button onclick="doAction('foreign_funds', this)">Foreign Funds</button>
@@ -289,10 +886,18 @@
             </div>
 
             <div id="exchange-ui" class="overlay-ui">
-                <div id="ex-instruction" style="margin-bottom: 10px; color: var(--gold); font-family: 'Cinzel'; font-size:1.1rem; text-shadow:1px 1px 1px black;"></div>
+                <div id="ex-instruction"
+                    style="margin-bottom: 10px; color: var(--gold); font-family: 'Cinzel'; font-size:1.1rem; text-shadow:1px 1px 1px black;">
+                </div>
                 <div class="ex-zones-container">
-                    <div class="ex-zone"><h4>Your Hand</h4><div id="ex-hand-zone" class="ex-cards-flex"></div></div>
-                    <div class="ex-zone"><h4>From Deck</h4><div id="ex-deck-zone" class="ex-cards-flex"></div></div>
+                    <div class="ex-zone">
+                        <h4>Your Hand</h4>
+                        <div id="ex-hand-zone" class="ex-cards-flex"></div>
+                    </div>
+                    <div class="ex-zone">
+                        <h4>From Deck</h4>
+                        <div id="ex-deck-zone" class="ex-cards-flex"></div>
+                    </div>
                 </div>
                 <button onclick="confirmExchange()" id="btn-conf-ex">Confirm Selection</button>
             </div>
@@ -305,12 +910,12 @@
         const socket = io();
         let mySeat = -1;
         let targetingMode = null;
-        let exchangePool = []; 
-        let selectedIndices = []; 
+        let exchangePool = [];
+        let selectedIndices = [];
         let keepCount = 0;
         let lastTableData = {};
         let myCoins = 0;
-        
+
         window.onload = () => { document.querySelectorAll('audio').forEach(a => a.volume = 0.5); };
 
         function toggleCheatsheet() {
@@ -328,97 +933,97 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + tabName).classList.add('active');
             const index = ['overview', 'roles', 'actions'].indexOf(tabName);
-            if(index >= 0) document.querySelectorAll('.tab-btn')[index].classList.add('active');
+            if (index >= 0) document.querySelectorAll('.tab-btn')[index].classList.add('active');
         }
 
-        const posCoords = [{top: '10px', left: '50%'}, {top: '25%', left: '85%'}, {top: '75%', left: '85%'}, {top: '90%', left: '50%'}, {top: '75%', left: '15%'}, {top: '25%', left: '15%'}];
+        const posCoords = [{ top: '10px', left: '50%' }, { top: '25%', left: '85%' }, { top: '75%', left: '85%' }, { top: '90%', left: '50%' }, { top: '75%', left: '15%' }, { top: '25%', left: '15%' }];
         function getSeatElementCenter(seatIdx) {
-            const el = document.getElementById(`seat-${seatIdx}`); if(!el) return {x:0, y:0}; const rect = el.getBoundingClientRect(); return { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
+            const el = document.getElementById(`seat-${seatIdx}`); if (!el) return { x: 0, y: 0 }; const rect = el.getBoundingClientRect(); return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         }
         function getMySeatCenter() {
-            const el = document.getElementById('my-hand-area'); if(!el) return {x: window.innerWidth/2, y: window.innerHeight - 100}; const rect = el.getBoundingClientRect(); return { x: rect.left + rect.width/2, y: rect.top };
+            const el = document.getElementById('my-hand-area'); if (!el) return { x: window.innerWidth / 2, y: window.innerHeight - 100 }; const rect = el.getBoundingClientRect(); return { x: rect.left + rect.width / 2, y: rect.top };
         }
         socket.on('lobby_update', data => {
             const slots = document.getElementById('lobby-slots'); slots.innerHTML = ''; const list = document.getElementById('lobby-list-content'); list.innerHTML = ''; let playerSeated = false;
-            for(let i=0; i<6; i++) {
+            for (let i = 0; i < 6; i++) {
                 const s = document.createElement('div'); s.style.top = posCoords[i].top; s.style.left = posCoords[i].left; s.className = data.seats[i] ? 'lobby-seat taken' : 'lobby-seat';
-                s.innerText = data.seats[i] ? data.seats[i].substring(0,4) : (i+1); if(!data.seats[i]) s.onclick = () => sit(i); slots.appendChild(s);
-                if(data.seats[i]) {
+                s.innerText = data.seats[i] ? data.seats[i].substring(0, 4) : (i + 1); if (!data.seats[i]) s.onclick = () => sit(i); slots.appendChild(s);
+                if (data.seats[i]) {
                     const div = document.createElement('div'); div.className = 'lobby-player-item';
                     div.innerHTML = `<span>${data.seats[i]}</span>` + ((i === data.host_seat) ? ' <span class="is-host">(HOST)</span>' : '');
-                    if(mySeat !== -1 && mySeat === data.host_seat && i !== mySeat) { div.classList.add('can-transfer'); div.onclick = () => { if(confirm(`Make ${data.seats[i]} host?`)) socket.emit('transfer_host', {target_seat: i}); }; }
-                    list.appendChild(div); if(i === mySeat) playerSeated = true;
+                    if (mySeat !== -1 && mySeat === data.host_seat && i !== mySeat) { div.classList.add('can-transfer'); div.onclick = () => { if (confirm(`Make ${data.seats[i]} host?`)) socket.emit('transfer_host', { target_seat: i }); }; }
+                    list.appendChild(div); if (i === mySeat) playerSeated = true;
                 }
             }
             const btn = document.getElementById('btn-start');
-            if (playerSeated && mySeat === data.host_seat) { btn.style.display = 'block'; btn.disabled = Object.values(data.seats).filter(x=>x).length < 2; btn.innerText = Object.values(data.seats).filter(x=>x).length<2?"Need 2 Players":"START GAME"; } else btn.style.display = 'none';
-            if(data.started) { document.getElementById('lobby-screen').style.display='none'; document.getElementById('game-board').style.display='block'; }
+            if (playerSeated && mySeat === data.host_seat) { btn.style.display = 'block'; btn.disabled = Object.values(data.seats).filter(x => x).length < 2; btn.innerText = Object.values(data.seats).filter(x => x).length < 2 ? "Need 2 Players" : "START GAME"; } else btn.style.display = 'none';
+            if (data.started) { document.getElementById('lobby-screen').style.display = 'none'; document.getElementById('game-board').style.display = 'block'; }
         });
-        function sit(idx) { const name = document.getElementById('username').value; if(!name) { alert("Please enter your name first!"); return; } mySeat = idx; socket.emit('sit_down', {seat: idx, name: name}); }
+        function sit(idx) { const name = document.getElementById('username').value; if (!name) { alert("Please enter your name first!"); return; } mySeat = idx; socket.emit('sit_down', { seat: idx, name: name }); }
         function requestStart() { socket.emit('start_game_request'); }
         socket.on('game_over', data => { document.getElementById('victory-modal').style.display = 'flex'; document.getElementById('winner-name').innerText = data.winner + " wins!"; });
         socket.on('game_update', state => {
-            mySeat = state.my_seat; lastTableData = state.table; 
+            mySeat = state.my_seat; lastTableData = state.table;
             if (state.table[mySeat]) { myCoins = state.table[mySeat].coins; document.getElementById('my-coins-display').innerText = "Coins: " + myCoins; }
             renderSeats(state.table, state.turn_seat);
-            if(state.sfx) { const a=document.getElementById('sfx-'+state.sfx); if(a){ a.volume=0.25; a.play().catch(e=>{}); } }
-            if(state.log && state.log.length > 0) { const l = document.getElementById('game-log'); l.innerHTML += `<div class="log-msg">${state.log}</div>`; l.scrollTop = l.scrollHeight; }
+            if (state.sfx) { const a = document.getElementById('sfx-' + state.sfx); if (a) { a.volume = 0.25; a.play().catch(e => { }); } }
+            if (state.log && state.log.length > 0) { const l = document.getElementById('game-log'); l.innerHTML += `<div class="log-msg">${state.log}</div>`; l.scrollTop = l.scrollHeight; }
             setTimeout(() => {
                 const arrow = document.getElementById('action-arrow'); const text = document.getElementById('arrow-text'); const bg = document.getElementById('arrow-bg');
-                if(state.arrow) {
+                if (state.arrow) {
                     const start = state.arrow.from === mySeat ? getMySeatCenter() : getSeatElementCenter(state.arrow.from);
                     const end = state.arrow.to === mySeat ? getMySeatCenter() : getSeatElementCenter(state.arrow.to);
                     arrow.setAttribute('x1', start.x); arrow.setAttribute('y1', start.y); arrow.setAttribute('x2', end.x); arrow.setAttribute('y2', end.y); arrow.style.display = 'block';
                     const midX = (start.x + end.x) / 2; const midY = (start.y + end.y) / 2;
                     text.setAttribute('x', midX); text.setAttribute('y', midY); text.textContent = state.arrow.label; text.style.display = 'block';
                     const bbox = text.getBBox(); bg.setAttribute('x', bbox.x - 5); bg.setAttribute('y', bbox.y - 2); bg.setAttribute('width', bbox.width + 10); bg.setAttribute('height', bbox.height + 4); bg.style.display = 'block';
-                } else { arrow.style.display = 'none'; text.style.display='none'; bg.style.display='none'; }
+                } else { arrow.style.display = 'none'; text.style.display = 'none'; bg.style.display = 'none'; }
             }, 50);
-            const handDiv = document.getElementById('my-hand-area'); handDiv.innerHTML='';
+            const handDiv = document.getElementById('my-hand-area'); handDiv.innerHTML = '';
             state.my_hand.forEach((c, i) => {
-                const el = document.createElement('div'); el.className = `card-lg card-${c.role} ${c.alive?'':'dead'}`;
+                const el = document.createElement('div'); el.className = `card-lg card-${c.role} ${c.alive ? '' : 'dead'}`;
                 const lbl = document.createElement('div'); lbl.className = 'card-name-overlay'; lbl.innerText = c.role; el.appendChild(lbl);
-                if(state.discard_needed && c.alive) { el.style.border="3px solid var(--red)"; el.onclick=()=>{if(confirm("Discard?")) socket.emit('discard', {index:i});} }
+                if (state.discard_needed && c.alive) { el.style.border = "3px solid var(--red)"; el.onclick = () => { if (confirm("Discard?")) socket.emit('discard', { index: i }); } }
                 handDiv.appendChild(el);
             });
             const main = document.getElementById('main-actions'); const react = document.getElementById('reaction-ui'); const exch = document.getElementById('exchange-ui'); const msg = document.getElementById('status-msg'); const discModal = document.getElementById('discard-modal');
-            if (!state.interaction_needed) react.style.display='none';
-            main.style.display='none'; exch.style.display='none'; discModal.style.display='none';
-            if(state.discard_needed) {
+            if (!state.interaction_needed) react.style.display = 'none';
+            main.style.display = 'none'; exch.style.display = 'none'; discModal.style.display = 'none';
+            if (state.discard_needed) {
                 msg.innerText = "LOSE LOYALTY"; discModal.style.display = 'flex';
                 const cont = document.getElementById('discard-container'); cont.innerHTML = '';
-                state.my_hand.forEach((c, i) => { if(c.alive) { const el = document.createElement('div'); el.className = `card-lg card-select card-${c.role}`; const lbl = document.createElement('div'); lbl.className = 'card-name-overlay'; lbl.innerText = c.role; el.appendChild(lbl); el.onclick = () => { socket.emit('discard', {index: i}); }; cont.appendChild(el); } });
+                state.my_hand.forEach((c, i) => { if (c.alive) { const el = document.createElement('div'); el.className = `card-lg card-select card-${c.role}`; const lbl = document.createElement('div'); lbl.className = 'card-name-overlay'; lbl.innerText = c.role; el.appendChild(lbl); el.onclick = () => { socket.emit('discard', { index: i }); }; cont.appendChild(el); } });
             }
-            else if(state.exchange_needed) {
-                exch.style.display='block'; exchangePool = state.exchange_data.pool; keepCount = state.exchange_data.keep_count; selectedIndices = [];
+            else if (state.exchange_needed) {
+                exch.style.display = 'block'; exchangePool = state.exchange_data.pool; keepCount = state.exchange_data.keep_count; selectedIndices = [];
                 document.getElementById('ex-instruction').innerText = `Select ${keepCount} card(s) to KEEP`;
                 const handZone = document.getElementById('ex-hand-zone'); handZone.innerHTML = ''; const deckZone = document.getElementById('ex-deck-zone'); deckZone.innerHTML = '';
                 exchangePool.forEach((role, idx) => {
                     const card = document.createElement('div'); card.className = `card-lg card-${role}`; card.id = `ex-card-${idx}`;
                     const lbl = document.createElement('div'); lbl.className = 'card-name-overlay'; lbl.innerText = role; card.appendChild(lbl);
-                    card.onclick = () => { if(selectedIndices.includes(idx)) { selectedIndices = selectedIndices.filter(i => i !== idx); card.style.border = ""; } else { if(selectedIndices.length < keepCount) { selectedIndices.push(idx); card.style.border = "3px solid var(--gold)"; } } };
+                    card.onclick = () => { if (selectedIndices.includes(idx)) { selectedIndices = selectedIndices.filter(i => i !== idx); card.style.border = ""; } else { if (selectedIndices.length < keepCount) { selectedIndices.push(idx); card.style.border = "3px solid var(--gold)"; } } };
                     if (idx < keepCount) handZone.appendChild(card); else deckZone.appendChild(card);
                 });
-            } else if(state.interaction_needed) {
-                react.style.display='flex'; msg.innerText="RESPONSE NEEDED";
-                document.querySelectorAll('#reaction-ui button').forEach(b => { if(b.innerText!=='Allow') b.style.display='none'; });
-                document.querySelector('#reaction-ui button:first-child').style.display='inline-block';
-                
-                if(state.interaction_type==='challenge_action' && state.pending_act_name!=='foreign_funds') document.getElementById('btn-chal').style.display='inline-block';
-                if(state.interaction_type==='challenge_block') document.getElementById('btn-chal').style.display='inline-block';
-                if(state.interaction_type==='block_action') {
+            } else if (state.interaction_needed) {
+                react.style.display = 'flex'; msg.innerText = "RESPONSE NEEDED";
+                document.querySelectorAll('#reaction-ui button').forEach(b => { if (b.innerText !== 'Allow') b.style.display = 'none'; });
+                document.querySelector('#reaction-ui button:first-child').style.display = 'inline-block';
+
+                if (state.interaction_type === 'challenge_action' && state.pending_act_name !== 'foreign_funds') document.getElementById('btn-chal').style.display = 'inline-block';
+                if (state.interaction_type === 'challenge_block') document.getElementById('btn-chal').style.display = 'inline-block';
+                if (state.interaction_type === 'block_action') {
                     const act = state.pending_act_name;
-                    if(act === 'foreign_funds') document.getElementById('blk-gov').style.display='inline-block';
-                    if(act === 'extort') { document.getElementById('blk-cmdr').style.display='inline-block'; document.getElementById('blk-diplo').style.display='inline-block'; }
-                    if(act === 'eliminate') document.getElementById('blk-matri').style.display='inline-block';
+                    if (act === 'foreign_funds') document.getElementById('blk-gov').style.display = 'inline-block';
+                    if (act === 'extort') { document.getElementById('blk-cmdr').style.display = 'inline-block'; document.getElementById('blk-diplo').style.display = 'inline-block'; }
+                    if (act === 'eliminate') document.getElementById('blk-matri').style.display = 'inline-block';
                 }
-            } else if(state.turn_seat===mySeat) {
-                if (state.table[mySeat] && !state.table[mySeat].alive) { msg.innerText = "ELIMINATED"; } 
+            } else if (state.turn_seat === mySeat) {
+                if (state.table[mySeat] && !state.table[mySeat].alive) { msg.innerText = "ELIMINATED"; }
                 else {
-                    if(targetingMode) { msg.innerText="SELECT TARGET"; }
-                    else if(state.pending_act_name) { msg.innerText="WAITING FOR OPPONENTS..."; main.style.display='flex'; }
-                    else { 
-                        msg.innerText="YOUR TURN"; main.style.display='flex';
+                    if (targetingMode) { msg.innerText = "SELECT TARGET"; }
+                    else if (state.pending_act_name) { msg.innerText = "WAITING FOR OPPONENTS..."; main.style.display = 'flex'; }
+                    else {
+                        msg.innerText = "YOUR TURN"; main.style.display = 'flex';
                         const allBtns = document.querySelectorAll('#main-actions button'); allBtns.forEach(b => { b.classList.remove('active-action'); b.disabled = false; });
                         document.getElementById('btn-kill').disabled = (myCoins < 3); document.getElementById('btn-coup').disabled = (myCoins < 7);
                     }
@@ -433,20 +1038,21 @@
                 const visualIdx = (seatId - mySeat + 3 + 6) % 6;
                 const angle = (visualIdx * 60 - 90) * (Math.PI / 180);
                 const x = 50 + 32 * Math.cos(angle); const y = 45 + 32 * Math.sin(angle);
-                const el = document.createElement('div'); el.id = `seat-${seatId}`; el.className = `seat-pos ${turnSeat===seatId ? 'active-turn' : ''}`;
+                const el = document.createElement('div'); el.id = `seat-${seatId}`; el.className = `seat-pos ${turnSeat === seatId ? 'active-turn' : ''}`;
                 el.style.left = x + '%'; el.style.top = y + '%'; el.style.transform = 'translate(-50%, -50%)';
-                el.onclick = () => { if(targetingMode) { socket.emit('action', {type: targetingMode, target_seat: seatId}); targetingMode = null; } };
-                if(targetingMode && p.alive) el.classList.add('target-mode');
-                el.innerHTML = `<div class="seat-info ${p.alive?'':'dead'}"><div style="font-weight:bold;color:var(--gold)">${p.name}</div><div style="font-size:0.8rem">Coins: ${p.coins}</div></div><div class="seat-hand">${p.hand.map(c => `<div class="card-sm ${c.alive?'card-back':('card-'+c.role+' dead')}"></div>`).join('')}</div>`;
+                el.onclick = () => { if (targetingMode) { socket.emit('action', { type: targetingMode, target_seat: seatId }); targetingMode = null; } };
+                if (targetingMode && p.alive) el.classList.add('target-mode');
+                el.innerHTML = `<div class="seat-info ${p.alive ? '' : 'dead'}"><div style="font-weight:bold;color:var(--gold)">${p.name}</div><div style="font-size:0.8rem">Coins: ${p.coins}</div></div><div class="seat-hand">${p.hand.map(c => `<div class="card-sm ${c.alive ? 'card-back' : ('card-' + c.role + ' dead')}"></div>`).join('')}</div>`;
                 container.appendChild(el);
             }
         }
-        function highlightAction(btn) { if(!btn) return; btn.classList.add('active-action'); document.querySelectorAll('#main-actions button').forEach(b => { if(b !== btn) b.disabled = true; }); }
-        function doAction(type, btn) { highlightAction(btn); socket.emit('action', {type: type, target_seat: null}); }
+        function highlightAction(btn) { if (!btn) return; btn.classList.add('active-action'); document.querySelectorAll('#main-actions button').forEach(b => { if (b !== btn) b.disabled = true; }); }
+        function doAction(type, btn) { highlightAction(btn); socket.emit('action', { type: type, target_seat: null }); }
         function startTargeting(type, btn) { highlightAction(btn); targetingMode = type; document.getElementById('status-msg').innerText = "SELECT TARGET"; renderSeats(lastTableData, lastTableData.turn_seat); }
-        function respond(c, r=null) { document.getElementById('reaction-ui').style.display = 'none'; document.getElementById('status-msg').innerText = "WAITING..."; socket.emit('response', {choice: c, role: r}); }
-        function confirmExchange() { if(selectedIndices.length === keepCount) { const keptRoles = selectedIndices.map(idx => exchangePool[idx]); socket.emit('finish_exchange', {kept_roles: keptRoles}); } }
-        window.addEventListener('resize', () => { if(lastTableData && mySeat !== -1) renderSeats(lastTableData, lastTableData.turn_seat); });
+        function respond(c, r = null) { document.getElementById('reaction-ui').style.display = 'none'; document.getElementById('status-msg').innerText = "WAITING..."; socket.emit('response', { choice: c, role: r }); }
+        function confirmExchange() { if (selectedIndices.length === keepCount) { const keptRoles = selectedIndices.map(idx => exchangePool[idx]); socket.emit('finish_exchange', { kept_roles: keptRoles }); } }
+        window.addEventListener('resize', () => { if (lastTableData && mySeat !== -1) renderSeats(lastTableData, lastTableData.turn_seat); });
     </script>
 </body>
+
 </html>
