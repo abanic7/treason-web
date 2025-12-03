@@ -51,7 +51,7 @@
         .dead { filter: grayscale(100%) brightness(40%); border-color: var(--red) !important; }
 
         /* === CONTROLS & HUD === */
-        .top-btn-container { position: fixed; top: 20px; left: 20px; z-index: 200; display: flex; gap: 10px; }
+        .top-btn-container { position: fixed; top: 20px; left: 20px; z-index: 200; display: flex; gap: 10px; align-items: center; }
         .icon-btn { background: var(--wood-light); border: 2px solid var(--gold); color: var(--gold); width: 40px; height: 40px; border-radius: 50%; font-family: 'Cinzel'; font-weight: bold; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
         
         #controls-area { position: fixed; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, #1a0f05 90%, transparent 100%); padding: 10px 0; display: flex; flex-direction: column; align-items: center; z-index: 50; border-top: 1px solid #333; }
@@ -79,7 +79,7 @@
         .overlay-ui { display: none; }
 
         /* CHEATSHEET */
-        #cheatsheet-content { display: none; position: absolute; top: 50px; left: 0; background: rgba(20, 10, 5, 0.95); border: 2px solid var(--gold); padding: 15px; border-radius: 8px; color: #ddd; width: 260px; }
+        #cheatsheet-content { display: none; position: absolute; top: 60px; left: 20px; background: rgba(20, 10, 5, 0.95); border: 2px solid var(--gold); padding: 15px; border-radius: 8px; color: #ddd; width: 260px; z-index: 210; }
         .cs-row { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding: 4px 0; }
         .cs-role { color: var(--gold); font-weight: bold; font-family: 'Cinzel'; }
 
@@ -99,16 +99,13 @@
     <audio id="sfx-stab" src="/static/stab.mp3"></audio> 
     <audio id="sfx-heartbeat" src="/static/heartbeat.mp3" loop></audio>
 
-    <!-- TOP CONTROLS -->
+    <!-- TOP LEFT CONTROLS (MOVED SUPPORT HERE) -->
     <div class="top-btn-container">
         <button class="icon-btn" onclick="toggleCheatsheet()">?</button>
         <button class="icon-btn" onclick="toggleRules()">i</button>
-    </div>
-
-    <!-- KO-FI DONATION BUTTON -->
-    <div style="position: fixed; top: 20px; right: 20px; z-index: 200;">
+        <!-- DONATION BUTTON -->
         <a href="https://ko-fi.com" target="_blank" style="text-decoration: none;">
-            <button class="icon-btn" style="width: auto; padding: 0 15px; font-size: 0.9rem; background: var(--red); color: var(--parchment); border-color: #520e0e;">
+            <button class="icon-btn" style="width: auto; padding: 0 15px; font-size: 0.8rem; background: var(--red); color: var(--parchment); border-color: #520e0e;">
                 ♥ Support
             </button>
         </a>
@@ -407,7 +404,6 @@
                     else {
                         acts.style.display='flex'; 
                         document.getElementById('status-msg').innerText = "YOUR TURN";
-                        // Reset button states
                         document.querySelectorAll('#main-actions button').forEach(b => {
                             if(b.id === 'btn-coup') b.disabled = state.table[mySeat].coins < 7;
                             else if(b.id === 'btn-kill') b.disabled = state.table[mySeat].coins < 3;
@@ -451,11 +447,9 @@
             document.querySelectorAll('#main-actions button').forEach(b=>{if(b!==btn) b.disabled=true;});
             targetingMode=t; 
             document.getElementById('status-msg').innerText="SELECT TARGET";
-            // Re-render seats to show targeting cursor
-            const dummyState = {table: lastTableData, turn_seat: mySeat}; // Hack to trigger render
             renderSeats(lastTableData, mySeat); 
-             const seats = document.querySelectorAll('.seat-pos');
-             seats.forEach(s => s.classList.add('target-mode'));
+            const seats = document.querySelectorAll('.seat-pos');
+            seats.forEach(s => s.classList.add('target-mode'));
         }
         function respond(c, r) { socket.emit('response', {choice:c, role:r}); }
         
