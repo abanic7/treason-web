@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Round Table Treason</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --wood-dark: #1a0f05;
+            --wood-light: #3e2b19;
+            --gold: #d4af37;
+            --red: #8a1c1c;
+            --green-felt: #2d5a27;
+            --parchment: #f4e4bc;
+        }
+
+        body {
+            background-color: #050302;
+            background-image: radial-gradient(circle at 50% 50%, #2b1d0e 0%, #000000 100%);
+            color: var(--parchment);
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* TOP LEFT BUTTONS */
+        .top-btn-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            background: var(--wood-light);
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-family: 'Cinzel';
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 0 10px #000;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+            background: var(--gold);
+            color: #000;
+        }
+
+        /* LOBBY INFO */
+        #lobby-info {
+            position: fixed;
+            top: 70px;
+            left: 20px;
+            z-index: 110;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--gold);
+            padding: 15px;
+            border-radius: 8px;
+            min-width: 200px;
+        }
+
+        #lobby-info h3 {
+            margin: 0 0 10px 0;
+            color: var(--gold);
+            font-family: 'Cinzel';
+            border-bottom: 1px solid #444;
+        }
+
+        .lobby-player-item {
+            padding: 5px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .is-host {
+            color: var(--gold);
+        }
+
+        .can-transfer {
+            cursor: pointer;
+        }
+
+        /* CHEATSHEET POPUP */
+        #cheatsheet-content {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 0;
+            background: rgba(20, 10, 5, 0.95);
+            border: 2px solid var(--gold);
+            padding: 15px;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 0.85rem;
+            width: 260px;
+            box-shadow: 0 5px 20px #000;
+        }
+
+        .cs-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #444;
+            padding: 4px 0;
+        }
+
+        .cs-role {
+            color: var(--gold);
+            font-weight: bold;
+            font-family: 'Cinzel';
+        }
+
+        .cs-desc {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 4px;
+            font-style: italic;
+        }
+
+        /* RULES MODAL */
+        .rules-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            height: 70vh;
+            background: #1a0f05;
+            border: 2px solid var(--gold);
+            z-index: 300;
+            box-shadow: 0 0 50px #000;
+            flex-direction: column;
+            border-radius: 8px;
+        }
+
+        .rules-header {
+            background: var(--wood-light);
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        .rules-header h2 {
+            margin: 0;
+            color: var(--gold);
+            font-family: 'Cinzel';
+        }
+
+        .close-btn {
+            cursor: pointer;
+            color: var(--red);
+            font-weight: bold;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+        }
+
+        .rules-tabs {
+            display: flex;
+            background: #111;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #888;
+            padding: 10px;
+            cursor: pointer;
+            font-family: 'Cinzel';
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .rules-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #ddd;
+        }
+
+        .rules-section {
+            display: none;
+        }
+
+        .rules-section.active {
+            display: block;
+        }
+
+        .rules-section h3 {
+            color: var(--gold);
+            border-bottom: 1px solid #444;
+            margin-top: 0;
+        }
+
+        .rules-section strong {
+            color: var(--parchment);
+        }
+
+        /* CARD & GAME STYLES (Existing) */
+        .card-name-overlay {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 244, 188, 0.8);
+            font-family: 'Cinzel', serif;
+            font-size: 0.75rem;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px black;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            padding-bottom: 2px;
+            border-bottom-left-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .modal-title {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            color: var(--red);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px var(--red);
+        }
+
+        .modal-subtitle {
+            font-size: 1.2rem;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+
+        .modal-cards {
+            display: flex;
+            gap: 30px;
+        }
+
+        .card-select {
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 4px solid transparent;
+        }
+
+        .card-select:hover {
+            transform: scale(1.1);
+            border-color: var(--red);
+        }
+
+        #victory-modal .modal-title {
+            color: var(--gold);
+            text-shadow: 0 0 20px var(--gold);
+        }
+
+        .log-name {
+            color: var(--gold);
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(212, 175, 55, 0.3);
+        }
+
+        #lobby-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lobby-table {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #5e4020 0%, #2b1d0e 100%);
+            border: 8px solid var(--gold);
+            position: relative;
+            margin: 40px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .lobby-seat {
+            width: 60px;
+            height: 60px;
+            background: #222;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            border: 2px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #fff;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s;
+        }
+
+        .lobby-seat:hover:not(.taken) {
+            transform: translate(-50%, -50%) scale(1.2);
+            background: var(--gold);
+            color: #000;
+        }
+
+        .lobby-seat.taken {
+            background: var(--red);
+            border-color: #500;
+            cursor: default;
+        }
+
+        #game-board {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        #center-table {
+            width: 45vw;
+            height: 45vw;
+            max-width: 600px;
+            max-height: 600px;
+            background-color: var(--wood-light);
+            background-image: url("https://www.transparenttextures.com/patterns/wood-pattern.png");
+            border-radius: 50%;
+            border: 12px solid #261608;
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: inset 0 0 80px #000, 0 20px 50px rgba(0, 0, 0, 0.8);
+            z-index: 1;
+        }
+
+        #center-table::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background: var(--green-felt);
+            border-radius: 50%;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #arrow-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .arrow-line {
+            stroke: var(--red);
+            stroke-width: 6;
+            stroke-dasharray: 15;
+            animation: dash 1s linear infinite;
+            filter: drop-shadow(0 0 5px black);
+            opacity: 0.8;
+        }
+
+        .arrow-head {
+            fill: var(--red);
+            filter: drop-shadow(0 0 5px black);
+        }
+
+        .arrow-label {
+            fill: var(--gold);
+            font-family: 'Cinzel';
+            font-weight: bold;
+            font-size: 24px;
+            text-shadow: 2px 2px 2px black;
+        }
+
+        .arrow-bg {
+            fill: rgba(0, 0, 0, 0.8);
+            rx: 5;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -30;
+            }
+        }
+
+        #game-log-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            height: 300px;
+            background: rgba(20, 10, 5, 0.85);
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            box-shadow: 0 5px 20px #000;
+        }
+
+        #log-header {
+            background: var(--wood-light);
+            color: var(--gold);
+            padding: 5px;
+            font-family: 'Cinzel';
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid var(--gold);
+        }
+
+        #game-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.85rem;
+            color: #ddd;
+            scrollbar-width: thin;
+        }
+
+        .log-msg {
+            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        #seats-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .seat-pos {
+            position: absolute;
+            width: 140px;
+            text-align: center;
+            pointer-events: auto;
+            transition: all 0.5s ease-out;
+        }
+
+        .seat-info {
+            background: rgba(20, 10, 5, 0.9);
+            border: 2px solid var(--wood-light);
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            box-shadow: 0 4px 10px #000;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .active-turn .seat-info {
+            border-color: var(--gold);
+            box-shadow: 0 0 20px var(--gold);
+            transform: scale(1.05);
+        }
+
+        .target-mode .seat-info {
+            cursor: pointer;
+            animation: targetPulse 1s infinite;
+            border-color: var(--red);
+        }
+
+        @keyframes targetPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(138, 28, 28, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(138, 28, 28, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(138, 28, 28, 0);
+            }
+        }
+
+        .card-sm {
+            width: 40px;
+            height: 58px;
+            background: #111;
+            border-radius: 4px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            background-size: cover;
+            border: 1px solid #333;
+            display: inline-block;
+            margin: 0 2px;
+        }
+
+        .card-lg {
+            width: 80px;
+            height: 120px;
+            background-color: #1a0f05;
+            background-size: cover;
+            border-radius: 6px;
+            border: 2px solid #333;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+
+        .card-lg:hover {
+            transform: translateY(-15px);
+            border-color: var(--gold);
+            z-index: 10;
+        }
+
+        .card-back {
+            background: repeating-linear-gradient(45deg, #3e2b19, #3e2b19 10px, #2b1d0e 10px, #2b1d0e 20px);
+            border: 1px solid #5e4020;
+        }
+
+        .card-Duke {
+            background-image: url('/static/duke.png');
+        }
+
+        .card-Assassin {
+            background-image: url('/static/assassin.png');
+        }
+
+        .card-Ambassador {
+            background-image: url('/static/ambassador.png');
+        }
+
+        .card-Captain {
+            background-image: url('/static/captain.png');
+        }
+
+        .card-Contessa {
+            background-image: url('/static/contessa.png');
+        }
+
+        .dead {
+            filter: grayscale(100%) brightness(50%);
+            border-color: var(--red) !important;
+        }
+
+        #controls-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #1a0f05 95%, transparent 100%);
+            padding: 15px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 50;
+            border-top: 1px solid #333;
+        }
+
+        #my-hand-area {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        #my-coins-display {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px #000;
+            border: 2px solid #5e4020;
+            padding: 5px 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+        }
+
+        #status-msg {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            min-height: 24px;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+        }
+
+        button {
+            background: linear-gradient(to bottom, #d4af37 0%, #a88520 100%);
+            border: 2px solid #5e4020;
+            border-radius: 4px;
+            color: #1a0f05;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:disabled {
+            background: #333;
+            color: #777;
+            border-color: #444;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        button.btn-red {
+            background: linear-gradient(to bottom, #8a1c1c 0%, #520e0e 100%);
+            color: white;
+            border-color: #2b0505;
+        }
+
+        button.active-action {
+            border-color: var(--gold);
+            box-shadow: 0 0 15px var(--gold);
+            transform: scale(1.1);
+            filter: brightness(1.2);
+            z-index: 10;
+        }
+
+        .ex-zones-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .ex-zone {
+            border: 2px solid var(--wood-light);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            min-width: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ex-zone h4 {
+            margin: 0 0 10px 0;
+            color: #aaa;
+            font-family: 'Cinzel';
+            border-bottom: 1px solid #444;
+            font-size: 0.9rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .ex-cards-flex {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .overlay-ui {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <audio id="sfx-coins" src="/static/coins.mp3"></audio> <audio id="sfx-drama" src="/static/drama.mp3"></audio> <audio
+        id="sfx-stab" src="/static/stab.mp3"></audio> <audio id="sfx-heartbeat" src="/static/heartbeat.mp3"
+        loop></audio>
+
+    <!-- TOP LEFT CONTROLS -->
+    <div class="top-btn-container">
+        <button class="icon-btn" onclick="toggleCheatsheet()">?</button>
+        <button class="icon-btn" onclick="toggleRules()">i</button>
+    </div>
+
+    <!-- CHEATSHEET POPUP -->
+    <div id="cheatsheet-content">
+        <div class="cs-row"><span class="cs-role">Duke</span> <span>Tax (+3)</span></div>
+        <div class="cs-desc">Blocks Foreign Aid</div>
+        <div class="cs-row"><span class="cs-role">Assassin</span> <span>Kill (-3)</span></div>
+        <div class="cs-desc">Blocked by Contessa</div>
+        <div class="cs-row"><span class="cs-role">Captain</span> <span>Steal (+2)</span></div>
+        <div class="cs-desc">Blocked by Captain / Ambassador</div>
+        <div class="cs-row"><span class="cs-role">Ambassador</span> <span>Exchange</span></div>
+        <div class="cs-desc">Blocks Steal</div>
+        <div class="cs-row"><span class="cs-role">Contessa</span> <span>-</span></div>
+        <div class="cs-desc">Blocks Assassination</div>
+        <div
+            style="margin-top:8px; padding-top:8px; border-top:1px solid var(--gold); color:var(--parchment); text-align:center">
+            Income: +1 (Safe)<br>Foreign Aid: +2 (Blockable)<br>Coup: -7 (Unblockable)</div>
+    </div>
+
+    <!-- RULES MODAL -->
+    <div id="rules-modal" class="rules-modal">
+        <div class="rules-header">
+            <h2>Rules &amp; Info</h2>
+            <button class="close-btn" onclick="toggleRules()">×</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="rules-tabs">
+            <button class="tab-btn active" data-tab="about" onclick="openTab('about')">About</button>
+            <button class="tab-btn" data-tab="basics" onclick="openTab('basics')">Basics</button>
+            <button class="tab-btn" data-tab="roles" onclick="openTab('roles')">Roles &amp; actions</button>
+            <button class="tab-btn" data-tab="challenge" onclick="openTab('challenge')">Challenges</button>
+            <button class="tab-btn" data-tab="expansions" onclick="openTab('expansions')">Expansions</button>
+        </div>
+
+        <!-- Content -->
+        <div class="rules-body">
+            <!-- ABOUT -->
+            <div id="tab-about" class="rules-section active">
+                <h3>About Treason</h3>
+                <p>
+                    This game is a digital adaptation of the bluffing card game Coup, originally designed by Rikki Tahta
+                    and published by Indie Boards &amp; Cards. [web:8][web:11]
+                </p>
+                <p>
+                    Treason Coup is an open‑source web implementation of Coup created by Chris Brown and Jackie
+                    Niebling, built on Node.js and inspired this version’s design and flow. [web:2][web:10]
+                </p>
+                <p>
+                    For the best experience, the physical card game is highly recommended if you enjoy the mechanics
+                    shown here. [web:8]
+                </p>
+                <p style="font-size:0.8rem; color:#aaa;">
+                    Note: This online version currently implements only the core base‑game rules (no Reformation teams
+                    or Inquisitor role yet).
+                </p>
+            </div>
+
+            <!-- BASICS -->
+            <div id="tab-basics" class="rules-section">
+                <h3>Goal &amp; setup</h3>
+                <ul>
+                    <li>Players each start with 2 hidden role cards (“influences”) and 2 coins from the central
+                        treasury. [web:8][web:11]</li>
+                    <li>The remaining role cards form the Court deck in the middle of the table. [web:8][web:11]</li>
+                    <li>The objective is to be the last player with at least one unrevealed influence. [web:8][web:11]
+                    </li>
+                </ul>
+
+                <h3>Influence &amp; elimination</h3>
+                <ul>
+                    <li>When you lose an influence, you choose one of your face‑down cards, reveal it, and it no longer
+                        provides abilities. [web:8][web:11]</li>
+                    <li>When both of your influences are revealed, you are out of the game and your cards stay face up.
+                        [web:8][web:11]</li>
+                </ul>
+
+                <h3>Turn flow</h3>
+                <ul>
+                    <li>Play proceeds clockwise; on your turn you must take exactly one action (you cannot pass).
+                        [web:8]</li>
+                    <li>Other players may then challenge or block, depending on the action. If no one does, the action
+                        simply resolves. [web:8][web:10]</li>
+                    <li>If you start a turn with 10 or more coins, you are forced to Coup someone that turn.
+                        [web:8][web:11]</li>
+                </ul>
+            </div>
+
+            <!-- ROLES & ACTIONS -->
+            <div id="tab-roles" class="rules-section">
+                <h3>Always‑available actions</h3>
+                <ul>
+                    <li><strong>Income:</strong> Take 1 coin from the treasury. Cannot be blocked or challenged.
+                        [web:8][web:10]</li>
+                    <li><strong>Foreign Aid:</strong> Take 2 coins; can be blocked by someone claiming Duke.
+                        [web:8][web:10]</li>
+                    <li><strong>Coup (7 coins):</strong> Pay 7 coins to force a player to lose an influence; this cannot
+                        be blocked or challenged. [web:8][web:11]</li>
+                </ul>
+
+                <h3>Character roles (base game)</h3>
+                <ul>
+                    <li>
+                        <strong>Duke:</strong> Tax – take 3 coins from the treasury; also can block Foreign Aid.
+                        [web:8][web:11]
+                    </li>
+                    <li>
+                        <strong>Assassin:</strong> Assassinate – pay 3 coins to make a target lose an influence, unless
+                        they successfully block with Contessa. [web:8][web:11]
+                    </li>
+                    <li>
+                        <strong>Captain:</strong> Steal – take up to 2 coins from another player; they may block if they
+                        claim Captain or Ambassador. [web:8][web:11]
+                    </li>
+                    <li>
+                        <strong>Ambassador:</strong> Exchange – draw 2 cards from the Court deck, then choose which 2 to
+                        keep from your hand plus the drawn cards, returning the rest to the deck. [web:8][web:11]
+                    </li>
+                    <li>
+                        <strong>Contessa:</strong> Has no action on your turn but can block Assassination against you.
+                        [web:8][web:11]
+                    </li>
+                </ul>
+
+                <p style="font-size:0.85rem; color:#aaa;">
+                    In this implementation you always see your current roles in the lower hand area; the server enforces
+                    costs, transfers and influence loss automatically.
+                </p>
+            </div>
+
+            <!-- CHALLENGES & BLOCKING -->
+            <div id="tab-challenge" class="rules-section">
+                <h3>Bluffing &amp; challenges</h3>
+                <ul>
+                    <li>You may declare any character action or block, whether or not you actually hold that role.
+                        [web:8][web:10]</li>
+                    <li>Any other player may challenge your claim; you must then reveal the claimed role if you have it.
+                        [web:8][web:11]</li>
+                    <li>If you prove the claim, the challenger loses an influence, you shuffle that revealed card back
+                        into the deck, and draw a replacement; your original action or block still happens.
+                        [web:8][web:11]</li>
+                    <li>If you cannot prove the claim, you lose an influence and your action or block is cancelled.
+                        [web:8][web:11]</li>
+                </ul>
+
+                <h3>Blocking</h3>
+                <ul>
+                    <li>Some actions can be blocked by specific roles (Duke vs Foreign Aid, Contessa vs Assassinate,
+                        Captain/Ambassador vs Steal). [web:8][web:11]</li>
+                    <li>Blocks can themselves be challenged exactly like actions; you resolve the challenge first, then
+                        either apply or cancel the original action. [web:8][web:10]</li>
+                    <li>It is possible to lose two influences in one turn if you both lose a challenge and suffer a
+                        successful Assassination against you. [web:8][web:10]</li>
+                </ul>
+            </div>
+
+            <!-- EXPANSIONS (REFERENCE ONLY) -->
+            <div id="tab-expansions" class="rules-section">
+                <h3>Inquisitor (Reformation)</h3>
+                <p style="font-size:0.85rem; color:#aaa;">
+                    These rules are shown for players familiar with Coup: Reformation; this role is not yet implemented
+                    in this online version. [web:10][web:13][web:16]
+                </p>
+                <ul>
+                    <li>The Inquisitor replaces the Ambassador in the deck. [web:13][web:16]</li>
+                    <li><strong>Exchange one:</strong> Draw 1 card from the deck and optionally swap it with one of your
+                        influences, then return 1 card to the deck. [web:13][web:16]</li>
+                    <li><strong>Examine:</strong> Look at one chosen influence of another player, then either let them
+                        keep it or force them to draw a new card and put the shown one back in the deck.
+                        [web:13][web:16]</li>
+                    <li>As a counteraction, the Inquisitor can also block Stealing. [web:13][web:16]</li>
+                </ul>
+
+                <h3>Reformation (teams &amp; treasury)</h3>
+                <p style="font-size:0.85rem; color:#aaa;">
+                    Reformation adds factions, conversions and a shared treasury reserve; again, this lobby currently
+                    uses only base‑game rules. [web:10][web:19]
+                </p>
+                <ul>
+                    <li>Players belong to one of two factions; many aggressive actions (Coup, Assassinate, Steal, some
+                        blocks) cannot be used against teammates. [web:10]</li>
+                    <li>Anyone may pay coins to switch their own allegiance or to convert another player to a different
+                        side, sending these coins into a separate treasury reserve. [web:10][web:19]</li>
+                    <li>Non‑Duke players can attempt to Embezzle, taking all coins from the reserve; if someone
+                        successfully proves they actually are a Duke, the embezzler loses influence and returns the
+                        money. [web:10][web:19]</li>
+                    <li>If eventually everyone ends up on the same team, normal targeting restrictions disappear and
+                        play continues until only one player survives. [web:10]</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- LOBBY -->
+    <div id="lobby-screen">
+        <h1 style="color: var(--gold); font-family: 'Cinzel'; font-size: 3rem;">Treason</h1>
+        <div id="lobby-info">
+            <h3>Players in Lobby</h3>
+            <div id="lobby-list-content"></div>
+        </div>
+        <input id="username" placeholder="Enter Your Name" style="padding: 10px; text-align: center;">
+        <div style="color:#888; margin-top:5px; font-size:0.8rem">Enter Name FIRST, then select a Seat</div>
+        <div class="lobby-table" id="lobby-slots"></div>
+        <button id="btn-start" onclick="requestStart()" style="margin-top: 20px; display:none;">START GAME</button>
+    </div>
+
+    <!-- MODALS (Victory/Discard) -->
+    <div id="discard-modal" class="modal-overlay">
+        <div class="modal-title">You Have Been Exposed!</div>
+        <div class="modal-subtitle">Select an influence to discard</div>
+        <div class="modal-cards" id="discard-container"></div>
+    </div>
+    <div id="victory-modal" class="modal-overlay">
+        <div class="modal-title">VICTORY</div>
+        <div class="modal-subtitle" id="winner-name"></div>
+        <button onclick="location.reload()">Return to Lobby</button>
+    </div>
+
+    <!-- GAME BOARD -->
+    <div id="game-board">
+        <div id="game-log-container">
+            <div id="log-header">Chronicles</div>
+            <div id="game-log"></div>
+        </div>
+        <svg id="arrow-layer">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" class="arrow-head" />
+                </marker>
+            </defs>
+            <line id="action-arrow" class="arrow-line" x1="0" y1="0" x2="0" y2="0" style="display:none"
+                marker-end="url(#arrowhead)" />
+            <rect id="arrow-bg" class="arrow-bg" x="0" y="0" width="0" height="0" style="display:none" />
+            <text id="arrow-text" class="arrow-label" x="0" y="0" text-anchor="middle" alignment-baseline="middle"
+                style="display:none"></text>
+        </svg>
+
+        <div id="center-table"></div>
+        <div id="seats-container"></div>
+
+        <div id="controls-area">
+            <div id="status-msg"></div>
+            <div id="my-coins-display">Coins: 0</div>
+
+            <div id="main-actions" class="action-bar" style="display:none;">
+                <button onclick="doAction('income', this)">Income</button>
+                <button onclick="doAction('foreign_aid', this)">Foreign Aid</button>
+                <button id="btn-coup" onclick="startTargeting('coup', this)" class="btn-red">Coup (7)</button>
+                <button onclick="doAction('tax', this)">Tax</button>
+                <button id="btn-kill" onclick="startTargeting('assassinate', this)" class="btn-red">Kill (3)</button>
+                <button onclick="startTargeting('steal', this)">Steal</button>
+                <button onclick="doAction('exchange', this)">Exchange</button>
+            </div>
+
+            <div id="wait-actions" class="action-bar" style="display:none;"></div>
+
+            <div id="reaction-ui" class="overlay-ui action-bar">
+                <button onclick="respond('allow')">Allow</button>
+                <button id="blk-duke" onclick="respond('block', 'Duke')">Block (Duke)</button>
+                <button id="blk-capt" onclick="respond('block', 'Captain')">Block (Capt)</button>
+                <button id="blk-amb" onclick="respond('block', 'Ambassador')">Block (Amb)</button>
+                <button id="blk-cont" onclick="respond('block', 'Contessa')">Block (Cont)</button>
+                <button id="btn-chal" onclick="respond('challenge')" class="btn-red">Challenge</button>
+            </div>
+
+            <div id="exchange-ui" class="overlay-ui">
+                <div id="ex-instruction"
+                    style="margin-bottom: 10px; color: var(--gold); font-family: 'Cinzel'; font-size:1.1rem; text-shadow:1px 1px 1px black;">
+                </div>
+                <div class="ex-zones-container">
+                    <div class="ex-zone">
+                        <h4>Your Hand</h4>
+                        <div id="ex-hand-zone" class="ex-cards-flex"></div>
+                    </div>
+                    <div class="ex-zone">
+                        <h4>From Deck</h4>
+                        <div id="ex-deck-zone" class="ex-cards-flex"></div>
+                    </div>
+                </div>
+                <button onclick="confirmExchange()" id="btn-conf-ex">Confirm Selection</button>
+            </div>
+
+            <div id="my-hand-area"></div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let mySeat = -1;
+        let targetingMode = null;
+        let exchangePool = [];
+        let selectedIndices = [];
+        let keepCount = 0;
+        let lastTableData = {};
+        let myCoins = 0;
+
+        window.onload = () => { document.querySelectorAll('audio').forEach(a => a.volume = 0.5); };
+
+        function toggleCheatsheet() {
+            const el = document.getElementById('cheatsheet-content');
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function toggleRules() {
+            const el = document.getElementById('rules-modal');
+            el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function openTab(tabKey) {
+    // hide all sections
+    document.querySelectorAll('.rules-section').forEach(el => {
+        el.classList.remove('active');
+    });
+    // deactivate all buttons
+    document.querySelectorAll('.rules-tabs .tab-btn').forEach(el => {
+        el.classList.remove('active');
+    });
+    // activate selected section
+    const section = document.getElementById('tab-' + tabKey);
+    if (section) section.classList.add('active');
+    // activate corresponding button
+    const btn = document.querySelector(`.rules-tabs .tab-btn[data-tab="${tabKey}"]`);
+    if (btn) btn.classList.add('active');
+    }
+
+
+        // ... [REST OF THE JAVASCRIPT REMAINS IDENTICAL TO PREVIOUS RESPONSE] ...
+        const posCoords = [{ top: '10px', left: '50%' }, { top: '25%', left: '85%' }, { top: '75%', left: '85%' }, { top: '90%', left: '50%' }, { top: '75%', left: '15%' }, { top: '25%', left: '15%' }];
+        function getSeatElementCenter(seatIdx) {
+            const el = document.getElementById(`seat-${seatIdx}`); if (!el) return { x: 0, y: 0 }; const rect = el.getBoundingClientRect(); return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        }
+        function getMySeatCenter() {
+            const el = document.getElementById('my-hand-area'); if (!el) return { x: window.innerWidth / 2, y: window.innerHeight - 100 }; const rect = el.getBoundingClientRect(); return { x: rect.left + rect.width / 2, y: rect.top };
+        }
+        socket.on('lobby_update', data => {
+            const slots = document.getElementById('lobby-slots'); slots.innerHTML = ''; const list = document.getElementById('lobby-list-content'); list.innerHTML = ''; let playerSeated = false;
+            for (let i = 0; i < 6; i++) {
+                const s = document.createElement('div'); s.style.top = posCoords[i].top; s.style.left = posCoords[i].left; s.className = data.seats[i] ? 'lobby-seat taken' : 'lobby-seat';
+                s.innerText = data.seats[i] ? data.seats[i].substring(0, 4) : (i + 1); if (!data.seats[i]) s.onclick = () => sit(i); slots.appendChild(s);
+                if (data.seats[i]) {
+                    const div = document.createElement('div'); div.className = 'lobby-player-item';
+                    div.innerHTML = `<span>${data.seats[i]}</span>` + ((i === data.host_seat) ? ' <span class="is-host">(HOST)</span>' : '');
+                    if (mySeat !== -1 && mySeat === data.host_seat && i !== mySeat) { div.classList.add('can-transfer'); div.onclick = () => { if (confirm(`Make ${data.seats[i]} host?`)) socket.emit('transfer_host', { target_seat: i }); }; }
+                    list.appendChild(div); if (i === mySeat) playerSeated = true;
+                }
+            }
+            const btn = document.getElementById('btn-start');
+            if (playerSeated && mySeat === data.host_seat) { btn.style.display = 'block'; btn.disabled = Object.values(data.seats).filter(x => x).length < 2; btn.innerText = Object.values(data.seats).filter(x => x).length < 2 ? "Need 2 Players" : "START GAME"; } else btn.style.display = 'none';
+            if (data.started) { document.getElementById('lobby-screen').style.display = 'none'; document.getElementById('game-board').style.display = 'block'; }
+        });
+        function sit(idx) { const name = document.getElementById('username').value; if (!name) { alert("Please enter your name first!"); return; } mySeat = idx; socket.emit('sit_down', { seat: idx, name: name }); }
+        function requestStart() { socket.emit('start_game_request'); }
+        socket.on('game_over', data => { document.getElementById('victory-modal').style.display = 'flex'; document.getElementById('winner-name').innerText = data.winner + " wins!"; });
+        socket.on('game_update', state => {
+            mySeat = state.my_seat; lastTableData = state.table;
+            if (state.table[mySeat]) { myCoins = state.table[mySeat].coins; document.getElementById('my-coins-display').innerText = "Coins: " + myCoins; }
+            renderSeats(state.table, state.turn_seat);
+            if (state.sfx) { const a = document.getElementById('sfx-' + state.sfx); if (a) { a.volume = 0.5; a.play().catch(e => { }); } }
+            if (state.log && state.log.length > 0) { const l = document.getElementById('game-log'); l.innerHTML += `<div class="log-msg">${state.log}</div>`; l.scrollTop = l.scrollHeight; }
+            setTimeout(() => {
+                const arrow = document.getElementById('action-arrow'); const text = document.getElementById('arrow-text'); const bg = document.getElementById('arrow-bg');
+                if (state.arrow) {
+                    const start = state.arrow.from === mySeat ? getMySeatCenter() : getSeatElementCenter(state.arrow.from);
+                    const end = state.arrow.to === mySeat ? getMySeatCenter() : getSeatElementCenter(state.arrow.to);
+                    arrow.setAttribute('x1', start.x); arrow.setAttribute('y1', start.y); arrow.setAttribute('x2', end.x); arrow.setAttribute('y2', end.y); arrow.style.display = 'block';
+                    const midX = (start.x + end.x) / 2; const midY = (start.y + end.y) / 2;
+                    text.setAttribute('x', midX); text.setAttribute('y', midY); text.textContent = state.arrow.label; text.style.display = 'block';
+                    const bbox = text.getBBox(); bg.setAttribute('x', bbox.x - 5); bg.setAttribute('y', bbox.y - 2); bg.setAttribute('width', bbox.width + 10); bg.setAttribute('height', bbox.height + 4); bg.style.display = 'block';
+                } else { arrow.style.display = 'none'; text.style.display = 'none'; bg.style.display = 'none'; }
+            }, 50);
+            const handDiv = document.getElementById('my-hand-area'); handDiv.innerHTML = '';
+            state.my_hand.forEach((c, i) => {
+                const el = document.createElement('div'); el.className = `card-lg card-${c.role} ${c.alive ? '' : 'dead'}`;
+                const lbl = document.createElement('div'); lbl.className = 'card-name-overlay'; lbl.innerText = c.role; el.appendChild(lbl);
+                if (state.discard_needed && c.alive) { el.style.border = "3px solid var(--red)"; el.onclick = () => { if (confirm("Discard?")) socket.emit('discard', { index: i }); } }
+                handDiv.appendChild(el);
+            });
+            const main = document.getElementById('main-actions'); const react = document.getElementById('reaction-ui'); const exch = document.getElementById('exchange-ui'); const msg = document.getElementById('status-msg'); const discModal = document.getElementById('discard-modal');
+            if (!state.interaction_needed) react.style.display = 'none';
+            main.style.display = 'none'; exch.style.display = 'none'; discModal.style.display = 'none';
+            if (state.discard_needed) {
+                msg.innerText = "LOSE INFLUENCE"; discModal.style.display = 'flex';
+                const cont = document.getElementById('discard-container'); cont.innerHTML = '';
+                state.my_hand.forEach((c, i) => { if (c.alive) { const el = document.createElement('div'); el.className = `card-lg card-select card-${c.role}`; const lbl = document.createElement('div'); lbl.className = 'card-name-overlay'; lbl.innerText = c.role; el.appendChild(lbl); el.onclick = () => { socket.emit('discard', { index: i }); }; cont.appendChild(el); } });
+            }
+            else if (state.exchange_needed) {
+                exch.style.display = 'block'; exchangePool = state.exchange_data.pool; keepCount = state.exchange_data.keep_count; selectedIndices = [];
+                document.getElementById('ex-instruction').innerText = `Select ${keepCount} card(s) to KEEP`;
+                const handZone = document.getElementById('ex-hand-zone'); handZone.innerHTML = ''; const deckZone = document.getElementById('ex-deck-zone'); deckZone.innerHTML = '';
+                exchangePool.forEach((role, idx) => {
+                    const card = document.createElement('div'); card.className = `card-lg card-${role}`; card.id = `ex-card-${idx}`;
+                    const lbl = document.createElement('div'); lbl.className = 'card-name-overlay'; lbl.innerText = role; card.appendChild(lbl);
+                    card.onclick = () => { if (selectedIndices.includes(idx)) { selectedIndices = selectedIndices.filter(i => i !== idx); card.style.border = ""; } else { if (selectedIndices.length < keepCount) { selectedIndices.push(idx); card.style.border = "3px solid var(--gold)"; } } };
+                    if (idx < keepCount) handZone.appendChild(card); else deckZone.appendChild(card);
+                });
+            } else if (state.interaction_needed) {
+                react.style.display = 'flex'; msg.innerText = "RESPONSE NEEDED";
+                document.querySelectorAll('#reaction-ui button').forEach(b => { if (b.innerText !== 'Allow') b.style.display = 'none'; });
+                // Re-order logic not needed here, CSS/HTML order handles it. Just showing buttons based on state
+                document.querySelector('#reaction-ui button:first-child').style.display = 'inline-block'; // Always show Allow
+                if (state.interaction_type === 'challenge_action' && state.pending_act_name !== 'foreign_aid') document.getElementById('btn-chal').style.display = 'inline-block';
+                if (state.interaction_type === 'challenge_block') document.getElementById('btn-chal').style.display = 'inline-block';
+                if (state.interaction_type === 'block_action') {
+                    const act = state.pending_act_name;
+                    if (act === 'foreign_aid') document.getElementById('blk-duke').style.display = 'inline-block';
+                    if (act === 'steal') { document.getElementById('blk-capt').style.display = 'inline-block'; document.getElementById('blk-amb').style.display = 'inline-block'; }
+                    if (act === 'assassinate') document.getElementById('blk-cont').style.display = 'inline-block';
+                }
+            } else if (state.turn_seat === mySeat) {
+                if (state.table[mySeat] && !state.table[mySeat].alive) { msg.innerText = "ELIMINATED"; }
+                else {
+                    if (targetingMode) { msg.innerText = "SELECT TARGET"; }
+                    else if (state.pending_act_name) { msg.innerText = "WAITING FOR OPPONENTS..."; main.style.display = 'flex'; }
+                    else {
+                        msg.innerText = "YOUR TURN"; main.style.display = 'flex';
+                        const allBtns = document.querySelectorAll('#main-actions button'); allBtns.forEach(b => { b.classList.remove('active-action'); b.disabled = false; });
+                        document.getElementById('btn-kill').disabled = (myCoins < 3); document.getElementById('btn-coup').disabled = (myCoins < 7);
+                    }
+                }
+            } else { msg.innerText = `Waiting for ${state.table[state.turn_seat].name}...`; }
+        });
+        function renderSeats(tableData, turnSeat) {
+            const container = document.getElementById('seats-container'); container.innerHTML = '';
+            for (let seatId in tableData) {
+                seatId = parseInt(seatId); if (seatId === mySeat) continue;
+                const p = tableData[seatId];
+                const visualIdx = (seatId - mySeat + 3 + 6) % 6;
+                const angle = (visualIdx * 60 - 90) * (Math.PI / 180);
+                const x = 50 + 32 * Math.cos(angle); const y = 45 + 32 * Math.sin(angle);
+                const el = document.createElement('div'); el.id = `seat-${seatId}`; el.className = `seat-pos ${turnSeat === seatId ? 'active-turn' : ''}`;
+                el.style.left = x + '%'; el.style.top = y + '%'; el.style.transform = 'translate(-50%, -50%)';
+                el.onclick = () => { if (targetingMode) { socket.emit('action', { type: targetingMode, target_seat: seatId }); targetingMode = null; } };
+                if (targetingMode && p.alive) el.classList.add('target-mode');
+                el.innerHTML = `<div class="seat-info ${p.alive ? '' : 'dead'}"><div style="font-weight:bold;color:var(--gold)">${p.name}</div><div style="font-size:0.8rem">Coins: ${p.coins}</div></div><div class="seat-hand">${p.hand.map(c => `<div class="card-sm ${c.alive ? 'card-back' : ('card-' + c.role + ' dead')}"></div>`).join('')}</div>`;
+                container.appendChild(el);
+            }
+        }
+        function highlightAction(btn) { if (!btn) return; btn.classList.add('active-action'); document.querySelectorAll('#main-actions button').forEach(b => { if (b !== btn) b.disabled = true; }); }
+        function doAction(type, btn) { highlightAction(btn); socket.emit('action', { type: type, target_seat: null }); }
+        function startTargeting(type, btn) { highlightAction(btn); targetingMode = type; document.getElementById('status-msg').innerText = "SELECT TARGET"; renderSeats(lastTableData, lastTableData.turn_seat); }
+        function respond(c, r = null) { document.getElementById('reaction-ui').style.display = 'none'; document.getElementById('status-msg').innerText = "WAITING..."; socket.emit('response', { choice: c, role: r }); }
+        function confirmExchange() { if (selectedIndices.length === keepCount) { const keptRoles = selectedIndices.map(idx => exchangePool[idx]); socket.emit('finish_exchange', { kept_roles: keptRoles }); } }
+        window.addEventListener('resize', () => { if (lastTableData && mySeat !== -1) renderSeats(lastTableData, lastTableData.turn_seat); });
+    </script>
+</body>
+
+</html>
