@@ -72,6 +72,7 @@
             width: 200px;
         }
 
+        /* SCREENS */
         .full-screen {
             position: fixed;
             top: 0;
@@ -98,13 +99,7 @@
             font-family: 'Cinzel';
         }
 
-        .landing-row {
-            display: flex;
-            align-items: center;
-            margin: 10px;
-            gap: 10px;
-        }
-
+        /* LOBBY FIXES */
         .lobby-table {
             width: 300px;
             height: 300px;
@@ -145,18 +140,36 @@
             cursor: default;
         }
 
+        /* Player List Sidebar - Moved to Left */
         #lobby-info {
-            position: fixed;
-            top: 70px;
-            left: 20px;
-            z-index: 110;
-            background: rgba(0, 0, 0, 0.8);
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(20, 10, 5, 0.8);
             border: 1px solid var(--gold);
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
-            min-width: 200px;
+            min-width: 220px;
+            text-align: left;
         }
 
+        #lobby-info h3 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--gold);
+            padding-bottom: 5px;
+            color: var(--gold);
+            font-family: 'Cinzel';
+        }
+
+        .lobby-player-row {
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* GAME BOARD */
         #game-board {
             display: none;
             width: 100%;
@@ -194,6 +207,7 @@
             border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
+        /* CARDS */
         .card-lg {
             width: 90px;
             height: 135px;
@@ -259,6 +273,7 @@
             border-color: var(--red) !important;
         }
 
+        /* UI CONTROLS */
         .top-btn-container {
             position: fixed;
             top: 20px;
@@ -300,10 +315,13 @@
             border-top: 1px solid #333;
         }
 
+        /* HAND AREA FIX: Center cards */
         #my-hand-area {
             display: flex;
-            gap: 10px;
+            justify-content: center;
+            gap: 15px;
             margin-top: 10px;
+            width: 100%;
         }
 
         #status-msg {
@@ -322,6 +340,7 @@
             max-width: 800px;
         }
 
+        /* LOG */
         #game-log-container {
             position: fixed;
             top: 20px;
@@ -354,6 +373,7 @@
             font-weight: bold;
         }
 
+        /* SEATS */
         #seats-container {
             position: absolute;
             width: 100%;
@@ -376,6 +396,7 @@
             padding: 8px;
             border-radius: 8px;
             box-shadow: 0 4px 10px #000;
+            transition: all 0.3s;
         }
 
         .active-turn .seat-info {
@@ -384,9 +405,7 @@
             transform: scale(1.05);
         }
 
-        .target-mode .seat-info {
-            cursor: pointer;
-            border-color: var(--red);
+        .target-pulse {
             animation: targetPulse 1s infinite;
         }
 
@@ -411,6 +430,7 @@
             border: 1px solid #333;
         }
 
+        /* MODALS */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -441,12 +461,14 @@
             justify-content: space-between;
             border-bottom: 1px solid #444;
             padding: 4px 0;
+            align-items: center;
         }
 
         .cs-role {
             color: var(--gold);
             font-weight: bold;
             font-family: 'Cinzel';
+            font-size: 1.1rem;
         }
 
         .rules-modal {
@@ -516,52 +538,43 @@
         <button class="icon-btn" onclick="toggleCheatsheet()">?</button>
         <button class="icon-btn" onclick="toggleRules()">I</button>
         <button class="icon-btn" onclick="toggleFeedback()">✉</button>
-        <a href="https://ko-fi.com" target="_blank" style="text-decoration: none;">
+        <a href="https://ko-fi.com/bane007" target="_blank" style="text-decoration: none;">
             <button class="icon-btn"
                 style="width: auto; padding: 0 15px; font-size: 0.8rem; background: var(--red); color: var(--parchment); border-color: #520e0e;">
                 ♥ Support
             </button>
         </a>
     </div>
-    <!-- CHEATSHEET (Linked to '?' Button) - Quick Reference -->
+
+    <!-- CHEATSHEET -->
     <div id="cheatsheet-popup"
         style="display: none; position: absolute; top: 70px; left: 20px; background: rgba(20, 10, 5, 0.95); border: 2px solid var(--gold); padding: 15px; border-radius: 8px; color: #ddd; width: 300px; z-index: 210;">
         <h3 style="margin-top:0; color:var(--gold); text-align:center; font-family:'Cinzel'">Roles & Abilities</h3>
-
-        <div class="cs-row">
-            <span class="cs-role">Governor</span>
+        <div class="cs-row"><span class="cs-role">Governor</span>
             <div style="text-align:right; font-size:0.9rem;">
                 <div style="color:#fff">Embezzle (+3)</div>
                 <div style="color:#888; font-style:italic;">Blocks Foreign Funds</div>
             </div>
         </div>
-
-        <div class="cs-row">
-            <span class="cs-role">Mercenary</span>
+        <div class="cs-row"><span class="cs-role">Mercenary</span>
             <div style="text-align:right; font-size:0.9rem;">
                 <div style="color:#fff">Eliminate (Kill)</div>
                 <div style="color:#444;">-</div>
             </div>
         </div>
-
-        <div class="cs-row">
-            <span class="cs-role">Commander</span>
+        <div class="cs-row"><span class="cs-role">Commander</span>
             <div style="text-align:right; font-size:0.9rem;">
                 <div style="color:#fff">Extort (+2)</div>
                 <div style="color:#888; font-style:italic;">Blocks Extort</div>
             </div>
         </div>
-
-        <div class="cs-row">
-            <span class="cs-role">Diplomat</span>
+        <div class="cs-row"><span class="cs-role">Diplomat</span>
             <div style="text-align:right; font-size:0.9rem;">
                 <div style="color:#fff">Reshuffle</div>
                 <div style="color:#888; font-style:italic;">Blocks Extort</div>
             </div>
         </div>
-
-        <div class="cs-row">
-            <span class="cs-role">Matriarch</span>
+        <div class="cs-row"><span class="cs-role">Matriarch</span>
             <div style="text-align:right; font-size:0.9rem;">
                 <div style="color:#444;">-</div>
                 <div style="color:#888; font-style:italic;">Blocks Eliminate</div>
@@ -569,7 +582,7 @@
         </div>
     </div>
 
-    <!-- FULL GAME GUIDE (Linked to 'I' Button) - Rules & Concepts -->
+    <!-- GAME GUIDE -->
     <div id="game-guide-modal" class="rules-modal">
         <div class="rules-header">
             <h2 style="margin:0; color:var(--gold); font-family:'Cinzel'">How to Play</h2>
@@ -582,45 +595,30 @@
             <button class="tab-btn" onclick="openTab('challenges')">Challenges</button>
         </div>
         <div class="rules-body">
-            <!-- TAB 1: GOAL & FLOW -->
             <div id="tab-overview" class="rules-section active">
                 <h3>Objective</h3>
-                <p>Be the last player with <strong>Loyalty</strong>. You start with 2 face-down cards representing your
-                    influence in the court. If you lose both, you are exiled.</p>
+                <p>Be the last player with <strong>Loyalty</strong>. You start with 2 face-down cards. If you lose both,
+                    you are exiled.</p>
                 <h3>Turn Structure</h3>
                 <p>On your turn, choose <strong>ONE action</strong>. You cannot pass.</p>
-                <p>After you declare an action, other players have a chance to <strong>Challenge</strong> or
-                    <strong>Block</strong> (Intercept) it.</p>
                 <h3>General Actions</h3>
                 <p><strong>Income:</strong> Take 1 Coin. (Safe).</p>
                 <p><strong>Foreign Funds:</strong> Take 2 Coins. (Can be blocked).</p>
                 <p><strong>Execute:</strong> Pay 7 Coins. Kill a player's Loyalty instantly. (Unblockable).</p>
             </div>
-
-            <!-- TAB 2: BLUFFING -->
             <div id="tab-bluffing" class="rules-section">
                 <h3>The Art of Treason</h3>
-                <p>The cards in your hand determine your "legal" abilities, but <strong>you can claim to have any card
-                        you want.</strong></p>
-                <p>Example: You can claim to be the <strong>Governor</strong> to take 3 coins, even if you don't have a
-                    Governor card. You only get in trouble if someone Challenges you!</p>
+                <p>You can claim to have any card you want. Example: Claim <strong>Governor</strong> to take 3 coins,
+                    even if you don't have it.</p>
             </div>
-
-            <!-- TAB 3: CHALLENGES -->
             <div id="tab-challenges" class="rules-section">
                 <h3>Challenging</h3>
-                <p>Any player can Challenge a character action (like Embezzle) or a Block.</p>
-                <h3>Outcomes</h3>
-                <p><strong>If you are Challenged and HAVE the card:</strong> Reveal it to prove your innocence. Shuffle
-                    it back into the deck and draw a new one. The challenger loses a Loyalty.</p>
-                <p><strong>If you are Challenged and DO NOT have the card:</strong> You are caught! You lose the action,
-                    and you lose a Loyalty (flip a card face up).</p>
+                <p>Any player can Challenge a character action. If you are challenged and <strong>HAVE</strong> the
+                    card, you show it and reshuffle. The challenger loses a Loyalty. If you <strong>DON'T</strong> have
+                    it, you lose a Loyalty.</p>
             </div>
         </div>
     </div>
-
-
-
 
     <!-- FEEDBACK MODAL -->
     <div id="feedback-modal" class="modal-overlay">
@@ -644,6 +642,7 @@
         </div>
     </div>
 
+    <!-- LANDING / LOBBY -->
     <div id="landing-screen" class="full-screen">
         <h1>TREASON</h1>
         <button onclick="createRoom()" style="font-size: 1.5rem; margin: 20px; width: 280px;">CREATE ROOM</button>
@@ -662,11 +661,11 @@
             <div id="lobby-list-content"></div>
         </div>
         <input id="username" placeholder="Enter Name" style="padding: 10px; text-align: center;">
-        <div style="color:#888; font-size:0.8rem; margin-bottom:10px;">Enter Name, then select a Seat</div>
         <div class="lobby-table" id="lobby-slots"></div>
         <button id="btn-start" onclick="requestStart()" style="margin-top: 30px; display:none;">START GAME</button>
     </div>
 
+    <!-- GAME BOARD -->
     <div id="game-board">
         <div id="game-log-container">
             <div
@@ -741,21 +740,12 @@
             other.style.display = 'none';
             el.style.display = (el.style.display === 'block') ? 'none' : 'block';
         }
-
         function toggleRules() {
             const el = document.getElementById('game-guide-modal');
             const other = document.getElementById('cheatsheet-popup');
             other.style.display = 'none';
             el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
         }
-
-        function openTab(n) {
-            document.querySelectorAll('.rules-section').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
-            document.getElementById('tab-' + n).classList.add('active');
-            event.target.classList.add('active');
-        }
-
         function toggleFeedback() {
             const el = document.getElementById('feedback-modal');
             if (el.style.display === 'flex') {
@@ -769,15 +759,19 @@
                 document.getElementById('feedback-text').focus();
             }
         }
+        function openTab(n) {
+            document.querySelectorAll('.rules-section').forEach(e => e.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+            document.getElementById('tab-' + n).classList.add('active');
+            event.target.classList.add('active');
+        }
 
         function sendFeedback() {
             const t = document.getElementById('feedback-text').value;
             const n = document.getElementById('username').value || "Anonymous";
             if (!t) return;
-
             const btn = document.querySelector('#feedback-form button:last-child');
             const og = btn.innerText; btn.disabled = true; btn.innerText = "Sending...";
-
             fetch('/submit_feedback', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: t, name: n })
@@ -817,7 +811,8 @@
                 slots.appendChild(s);
                 if (data.seats[i]) {
                     const d = document.createElement('div');
-                    d.innerHTML = `<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333;"><span>${data.seats[i]}</span>` + ((i === parseInt(data.host_seat)) ? ' <span style="color:var(--gold)">HOST</span>' : '') + `</div>`;
+                    d.className = "lobby-player-row";
+                    d.innerHTML = `<span>${data.seats[i]}</span>` + ((i === parseInt(data.host_seat)) ? ' <span style="color:var(--gold); font-size:0.8rem">HOST</span>' : '');
                     list.appendChild(d);
                     if (i === mySeat) seated = true;
                 }
@@ -840,24 +835,54 @@
         }
         function requestStart() { socket.emit('start_game_request'); }
 
-        socket.on('game_update', state => {
-            mySeat = state.my_seat; lastTableData = state.table;
-            const seatCont = document.getElementById('seats-container'); seatCont.innerHTML = '';
-            for (let sid in state.table) {
-                sid = parseInt(sid); if (sid === mySeat) continue;
-                const p = state.table[sid];
+        function renderGame(state, seatsOnly = false) {
+            if (!seatsOnly) {
+                mySeat = state.my_seat;
+                lastTableData = state.table;
+            }
+            const seatCont = document.getElementById('seats-container');
+            seatCont.innerHTML = '';
+            const tableData = seatsOnly ? lastTableData : state.table;
+
+            for (let sid in tableData) {
+                sid = parseInt(sid);
+                if (sid === mySeat) continue;
+                const p = tableData[sid];
                 const idx = (sid - mySeat + 3 + 6) % 6;
                 const angle = (idx * 60 - 90) * (Math.PI / 180);
                 const x = 50 + 35 * Math.cos(angle); const y = 45 + 35 * Math.sin(angle);
-                const el = document.createElement('div'); el.className = `seat-pos ${state.turn_seat === sid ? 'active-turn' : ''}`;
+
+                const el = document.createElement('div');
+                el.className = `seat-pos ${(!seatsOnly && state.turn_seat === sid) ? 'active-turn' : ''}`;
                 el.style.left = x + '%'; el.style.top = y + '%'; el.style.transform = 'translate(-50%,-50%)';
-                el.innerHTML = `<div class="seat-info ${p.alive ? '' : 'dead'}"><div style="font-weight:bold; color:var(--gold)">${p.name}</div><div style="font-size:0.8rem">Coins: ${p.coins}</div></div><div style="margin-top:5px;">${p.hand.map(c => `<div class="card-sm ${c.alive ? 'card-back' : ('card-' + c.role + ' dead')}"></div>`).join('')}</div>`;
+                el.innerHTML = `
+                    <div class="seat-info ${p.alive ? '' : 'dead'}">
+                        <div style="font-weight:bold; color:var(--gold)">${p.name}</div>
+                        <div style="font-size:0.8rem">Coins: ${p.coins}</div>
+                    </div>
+                    <div style="margin-top:5px;">
+                        ${p.hand.map(c => `<div class="card-sm ${c.alive ? 'card-back' : ('card-' + c.role + ' dead')}"></div>`).join('')}
+                    </div>
+                `;
                 if (targetingMode && p.alive) {
-                    el.style.cursor = 'pointer'; el.classList.add('target-mode');
-                    el.onclick = () => { socket.emit('action', { type: targetingMode, target_seat: sid }); targetingMode = null; };
+                    el.style.cursor = 'pointer';
+                    const infoBox = el.querySelector('.seat-info');
+                    infoBox.style.borderColor = 'var(--red)';
+                    infoBox.style.boxShadow = '0 0 15px var(--red)';
+                    infoBox.classList.add('target-pulse');
+                    el.onclick = function () {
+                        socket.emit('action', { type: targetingMode, target_seat: sid });
+                        targetingMode = null;
+                        document.getElementById('status-msg').innerText = "WAITING...";
+                        renderGame({}, true);
+                    };
                 }
                 seatCont.appendChild(el);
             }
+        }
+
+        socket.on('game_update', state => {
+            renderGame(state, false);
             if (state.table[mySeat]) {
                 document.getElementById('my-coins-display').innerText = "Coins: " + state.table[mySeat].coins;
                 const coins = state.table[mySeat].coins;
@@ -866,17 +891,20 @@
             }
             if (state.log) { const l = document.getElementById('game-log'); l.innerHTML += `<div class="log-msg">${state.log}</div>`; l.scrollTop = l.scrollHeight; }
             if (state.sfx) { document.getElementById('sfx-' + state.sfx).play().catch(() => { }); }
+
             const h = document.getElementById('my-hand-area'); h.innerHTML = '';
             state.my_hand.forEach((c, i) => {
                 const d = document.createElement('div'); d.className = `card-lg card-${c.role} ${c.alive ? '' : 'dead'}`;
                 d.innerHTML = `<div class="card-name-overlay">${c.role}</div>`;
                 h.appendChild(d);
             });
+
             const acts = document.getElementById('main-actions');
             const react = document.getElementById('reaction-ui');
             const exch = document.getElementById('exchange-ui');
             const disc = document.getElementById('discard-modal');
             acts.style.display = 'none'; react.style.display = 'none'; exch.style.display = 'none'; disc.style.display = 'none';
+
             if (state.discard_needed) {
                 document.getElementById('status-msg').innerText = "LOSE LOYALTY";
                 disc.style.display = 'flex';
@@ -957,8 +985,7 @@
             document.querySelectorAll('#main-actions button').forEach(b => { if (b !== btn) b.disabled = true; });
             targetingMode = t;
             document.getElementById('status-msg').innerText = "SELECT TARGET";
-            const seats = document.querySelectorAll('.seat-pos');
-            seats.forEach(s => s.classList.add('target-mode'));
+            renderGame({}, true);
         }
         function respond(c, r) { socket.emit('response', { choice: c, role: r }); }
         socket.on('game_over', d => { document.getElementById('victory-modal').style.display = 'flex'; document.getElementById('winner-name').innerText = d.winner + " Wins!"; });

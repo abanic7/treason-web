@@ -1,10 +1,14 @@
+import os
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import string
-import json
-import os
 import requests
+import json
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'treason_secret_key_99'
@@ -21,8 +25,8 @@ BLOCKERS = {
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
 # --- GLOBAL STATE ---
-rooms = {}      # Key: room_code, Value: dict containing all game state
-player_rooms = {} # Map sid -> room_code
+rooms = {}        
+player_rooms = {} 
 
 def generate_room_code():
     while True:
@@ -72,18 +76,12 @@ def index():
 
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
-    if "YOUR_DISCORD_WEBHOOK" in DISCORD_WEBHOOK_URL:
-        return {'status': 'error', 'msg': 'Webhook not configured on server'}, 500
-
+    if not DISCORD_WEBHOOK_URL: return {'status': 'error', 'msg': 'Webhook not configured'}, 500
     data = request.json
-    feedback = data.get('message', '')
-    sender = data.get('name', 'Anonymous')
-    
+    feedback = data.get('message', ''); sender = data.get('name', 'Anonymous')
     if not feedback: return {'status': 'error', 'msg': 'Empty message'}, 400
-
-    payload = {"content": f"**New Feedback from {sender}:**\n{feedback}"}
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json=payload)
+        requests.post(DISCORD_WEBHOOK_URL, json={"content": f"**Feedback from {sender}:**\n{feedback}"})
         return {'status': 'success'}
     except Exception as e:
         return {'status': 'error', 'msg': str(e)}, 500
@@ -120,15 +118,11 @@ def on_disconnect():
         for i in room['seats']:
             if room['seats'][i] and room['seats'][i]['sid'] == sid:
                 room['seats'][i] = None; break
-        
         if room['game_host'] == sid:
             occupied = [s for s in room['seats'].values() if s is not None]
             room['game_host'] = occupied[0]['sid'] if occupied else None
-        
-        occupied_count = sum(1 for s in room['seats'].values() if s is not None)
-        if occupied_count == 0: del rooms[code]
+        if sum(1 for s in room['seats'].values() if s is not None) == 0: del rooms[code]
         else: emit('lobby_update', get_lobby_data(code), room=code)
-            
     if sid in player_rooms: del player_rooms[sid]
 
 @socketio.on('sit_down')
@@ -187,7 +181,7 @@ def on_action(data):
     if action == 'execute':
         if actor['coins'] < 7: return
         actor['coins'] -= 7
-        broadcast_state(code, f"{fmt_name(room, actor_seat)} Executed {fmt_name(room, target_seat)}!", sfx='drama')
+        # FIX: Removed double broadcast here. trigger_loss handles the log.
         trigger_loss(room, code, target_seat, f"Executed by {fmt_name(room, actor_seat)}!", 'next_turn')
         return
 
@@ -234,10 +228,8 @@ def on_response(data):
             act = pa['type']
             if act in ['extort', 'eliminate'] and responder_seat != pa['target_seat']: return
             role = data.get('role', BLOCKERS[act][0])
-            pa['state'] = 'challenge_block'; pa['block_claim'] = role
-            pa['blocker_seat'] = responder_seat; pa['allowed_by'] = set() 
+            pa['state'] = 'challenge_block'; pa['block_claim'] = role; pa['blocker_seat'] = responder_seat; pa['allowed_by'] = set() 
             broadcast_state(code, f"{fmt_name(room, responder_seat)} intercepts with {role}. Challenge?", interaction=True)
-            
         elif resp == 'allow':
              if pa['type'] == 'foreign_funds':
                  pa['allowed_by'].add(responder_seat)
@@ -276,11 +268,9 @@ def resolve_challenge(room, code, challenger, accused, claimed_role, is_block=Fa
 def execute_action(room, code):
     pa = room['pending_action']; act = pa['type']
     actor = room['seats'][pa['actor_seat']]; target = room['seats'][pa['target_seat']] if pa['target_seat'] is not None else None
-    
     msg = f"{fmt_name(room, pa['actor_seat'])} performs {act.upper()}!"
     
     if act == 'reshuffle': initiate_exchange(room, code, pa['actor_seat']); return
-
     if act == 'foreign_funds': actor['coins'] += 2
     elif act == 'embezzle': actor['coins'] += 3
     elif act == 'extort':
@@ -299,8 +289,7 @@ def initiate_exchange(room, code, seat_idx):
     drawn = []
     for _ in range(2):
         if room['deck']: drawn.append(room['deck'].pop())
-    pool = alive + drawn
-    room['exchange_state'] = {'actor_seat': seat_idx, 'pool': pool, 'count_to_keep': len(alive)}
+    room['exchange_state'] = {'actor_seat': seat_idx, 'pool': alive + drawn, 'count_to_keep': len(alive)}
     broadcast_state(code, f"{fmt_name(room, seat_idx)} is reshuffling loyalties...", exchange_active=True)
 
 @socketio.on('finish_exchange')
@@ -312,23 +301,23 @@ def on_finish_exchange(data):
     
     kept = data['kept_roles']
     if len(kept) != room['exchange_state']['count_to_keep']: return
-
     pool = list(room['exchange_state']['pool'])
     for r in kept:
         if r in pool: pool.remove(r)
         else: return
-    
     room['deck'].extend(pool); random.shuffle(room['deck'])
     p = room['seats'][seat_idx]; idx = 0
     for c in p['hand']:
         if c['alive']: c['role'] = kept[idx]; idx += 1
-            
     room['exchange_state'] = None; broadcast_state(code, "Reshuffle complete.", sfx='coins'); next_turn(room, code)
 
 def trigger_loss(room, code, seat_idx, log_msg, next_step):
     p = room['seats'][seat_idx]; alive = [c for c in p['hand'] if c['alive']]
+    
     sfx = 'drama'
-    if 'eliminate' in log_msg.lower(): sfx = 'heartbeat'
+    if 'eliminate' in log_msg.lower(): 
+        sfx = 'heartbeat'
+
     broadcast_state(code, log_msg, sfx=sfx)
     
     if not alive: finish_discard(room, code, seat_idx, next_step); return
@@ -412,7 +401,6 @@ def broadcast_state(room_code, log_msg, interaction=False, discard_prompt=False,
         show_discard = (discard_prompt and room['discard_state'] and my_seat == room['discard_state']['victim_seat'])
         show_exchange = (exchange_active and room['exchange_state'] and my_seat == room['exchange_state']['actor_seat'])
         ex_data = {'pool': room['exchange_state']['pool'], 'keep_count': room['exchange_state']['count_to_keep']} if show_exchange else None
-        
         arrow_data = None
         if pa and pa['target_seat'] is not None: arrow_data = {'from': pa['actor_seat'], 'to': pa['target_seat'], 'label': pa['type'].upper()}
 
