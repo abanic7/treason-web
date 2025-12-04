@@ -5,13 +5,13 @@ import random
 import string
 import requests
 import json
+
+# Try to load environment variables (for local dev)
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
-
-
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'treason_secret_key_99'
@@ -184,7 +184,6 @@ def on_action(data):
     if action == 'execute':
         if actor['coins'] < 7: return
         actor['coins'] -= 7
-        # FIX: Removed double broadcast here. trigger_loss handles the log.
         trigger_loss(room, code, target_seat, f"Executed by {fmt_name(room, actor_seat)}!", 'next_turn')
         return
 
@@ -316,11 +315,8 @@ def on_finish_exchange(data):
 
 def trigger_loss(room, code, seat_idx, log_msg, next_step):
     p = room['seats'][seat_idx]; alive = [c for c in p['hand'] if c['alive']]
-    
     sfx = 'drama'
-    if 'eliminate' in log_msg.lower(): 
-        sfx = 'heartbeat'
-
+    if 'eliminate' in log_msg.lower(): sfx = 'heartbeat'
     broadcast_state(code, log_msg, sfx=sfx)
     
     if not alive: finish_discard(room, code, seat_idx, next_step); return
@@ -352,7 +348,14 @@ def finish_discard(room, code, seat_idx, next_step):
         p['alive'] = False
         alive_players = [room['seats'][i]['name'] for i in room['seats'] if room['seats'][i] and room['seats'][i]['alive']]
         if len(alive_players) == 1: 
-            emit('game_over', {'winner': alive_players[0]}, room=code); room['game_started'] = False; return
+            emit('game_over', {'winner': alive_players[0]}, room=code)
+            # --- REPLAY LOGIC ---
+            room['game_started'] = False
+            room['turn_index'] = 0
+            room['pending_action'] = None
+            # Send everyone back to lobby (client handles the view switch)
+            emit('lobby_update', get_lobby_data(code), room=code)
+            return
 
     if next_step == 'next_turn': next_turn(room, code)
     elif next_step == 'execute': execute_action(room, code)
@@ -404,8 +407,10 @@ def broadcast_state(room_code, log_msg, interaction=False, discard_prompt=False,
         show_discard = (discard_prompt and room['discard_state'] and my_seat == room['discard_state']['victim_seat'])
         show_exchange = (exchange_active and room['exchange_state'] and my_seat == room['exchange_state']['actor_seat'])
         ex_data = {'pool': room['exchange_state']['pool'], 'keep_count': room['exchange_state']['count_to_keep']} if show_exchange else None
+        
         arrow_data = None
-        if pa and pa['target_seat'] is not None: arrow_data = {'from': pa['actor_seat'], 'to': pa['target_seat'], 'label': pa['type'].upper()}
+        if pa and pa['target_seat'] is not None: 
+            arrow_data = {'from': pa['actor_seat'], 'to': pa['target_seat'], 'label': pa['type'].upper()}
 
         emit('game_update', {
             'my_seat': my_seat, 'turn_seat': room['turn_index'], 'table': table_data, 'my_hand': me['hand'],
